@@ -1,0 +1,342 @@
+:root {
+  --bg: #0b1220;
+  --panel: #111b2f;
+  --text: #e8eefc;
+  --muted: #a9b5d1;
+  --border: rgba(255, 255, 255, 0.08);
+  --border-hover: rgba(255, 255, 255, 0.18);
+  --accent: #4f8cff;
+  --danger: #ff4f6d;
+  --shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+
+  --control-bg: rgba(255, 255, 255, 0.04);
+  --item-bg: rgba(255, 255, 255, 0.03);
+  --sidebar-bg: rgba(255, 255, 255, 0.01);
+  --section-card-bg: rgba(255, 255, 255, 0.02);
+  --danger-text: #ffd0d8;
+
+  --long-bg: rgba(34, 197, 94, 0.22);
+  --long-border: rgba(34, 197, 94, 0.95);
+  --long-text: #d9ffe7;
+
+  --short-bg: rgba(239, 68, 68, 0.22);
+  --short-border: rgba(239, 68, 68, 0.95);
+  --short-text: #ffe0e0;
+}
+
+body[data-theme='light'] {
+  --bg: #f6f8ff;
+  --panel: #ffffff;
+  --text: #0b1220;
+  --muted: #4a5568;
+  --border: rgba(0, 0, 0, 0.08);
+  --border-hover: rgba(0, 0, 0, 0.18);
+  --accent: #2c6bed;
+  --danger: #ff3b5c;
+  --shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+
+  --control-bg: rgba(0, 0, 0, 0.04);
+  --item-bg: rgba(0, 0, 0, 0.03);
+  --sidebar-bg: rgba(0, 0, 0, 0.015);
+  --section-card-bg: rgba(0, 0, 0, 0.02);
+  --danger-text: #8a1c2f;
+
+  --long-bg: rgba(16, 185, 129, 0.22);
+  --long-border: rgba(16, 185, 129, 0.95);
+  --long-text: #06351e;
+
+  --short-bg: rgba(255, 59, 92, 0.18);
+  --short-border: rgba(255, 59, 92, 0.95);
+  --short-text: #3b000c;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.app {
+  min-height: 100vh;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--border);
+}
+
+.brand {
+  font-weight: 700;
+}
+
+.rightControls {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.createForm {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.coinInput {
+  width: min(420px, 50vw);
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--control-bg);
+  color: var(--text);
+  outline: none;
+}
+
+.btn {
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--control-bg);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.btn:hover {
+  border-color: var(--border-hover);
+}
+
+.btn.primary {
+  background: rgba(79, 140, 255, 0.25);
+  border-color: rgba(79, 140, 255, 0.35);
+}
+
+.btn.danger {
+  background: rgba(255, 79, 109, 0.2);
+  border-color: rgba(255, 79, 109, 0.3);
+  color: var(--danger-text);
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  gap: 0;
+}
+
+.sidebar {
+  padding: 16px 14px;
+  border-right: 1px solid var(--border);
+  background: var(--sidebar-bg);
+}
+
+.sidebarHeader {
+  color: var(--muted);
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+
+.checklistList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.listItem {
+  padding: 12px 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--item-bg);
+  cursor: pointer;
+  user-select: none;
+}
+
+.listItem:hover {
+  border-color: var(--border-hover);
+}
+
+.listItem.active {
+  border-color: rgba(79, 140, 255, 0.6);
+  box-shadow: var(--shadow);
+}
+
+.listItemTitle {
+  font-weight: 700;
+}
+
+.listItemMeta {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.main {
+  padding: 18px 18px;
+}
+
+.emptyState {
+  color: var(--muted);
+  margin-top: 40px;
+}
+
+.detailHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 14px;
+  margin-bottom: 16px;
+}
+
+.titleBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.coinEdit {
+  width: min(560px, 45vw);
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--control-bg);
+  color: var(--text);
+  outline: none;
+  font-weight: 700;
+}
+
+.meta {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.detailActions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.sections {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.sectionCard {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--section-card-bg);
+  overflow: hidden;
+}
+
+.sectionTitle {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+  font-weight: 800;
+}
+
+.sectionBody {
+  padding: 8px 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sectionBodyTwoCol {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 28px;
+  row-gap: 10px;
+}
+
+.strategyCol {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.colHeader {
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  padding: 6px 10px;
+  border-radius: 12px;
+  width: fit-content;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+body[data-theme='light'] .colHeader {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+.strategyCol .colHeader {
+  margin-top: 2px;
+}
+
+.colHeader.long {
+  border-color: var(--long-border);
+  background: var(--long-bg);
+  color: var(--long-text);
+}
+
+.colHeader.short {
+  border-color: var(--short-border);
+  background: var(--short-bg);
+  color: var(--short-text);
+}
+
+.checkRow {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 4px 2px;
+}
+
+.checkRow label {
+  cursor: pointer;
+  line-height: 1.25;
+}
+
+.dirPill {
+  display: inline-block;
+  min-width: 72px;
+  text-align: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--muted);
+  background: transparent;
+}
+
+.dirPill.long {
+  border-color: var(--long-border);
+  background: var(--long-bg);
+  color: var(--long-text);
+}
+
+.dirPill.short {
+  border-color: var(--short-border);
+  background: var(--short-bg);
+  color: var(--short-text);
+}
+
+.checkRow input[type='checkbox'] {
+  margin-top: 2px;
+  width: 18px;
+  height: 18px;
+}
+
+@media (max-width: 900px) {
+  .sectionBodyTwoCol {
+    grid-template-columns: 1fr;
+  }
+}
+

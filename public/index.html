@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Trading Checklist</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="topbar">
+        <div class="brand">Trading Checklist</div>
+
+        <div class="rightControls">
+          <form id="createForm" class="createForm">
+            <input
+              id="coinInput"
+              class="coinInput"
+              type="text"
+              placeholder="Название монеты (например BTC, ETH)"
+              autocomplete="off"
+              required
+            />
+            <button class="btn primary" type="submit">Создать</button>
+          </form>
+
+          <button id="themeToggleBtn" class="btn" type="button">Светлая тема</button>
+        </div>
+      </header>
+
+      <div class="layout">
+        <aside class="sidebar">
+          <div class="sidebarHeader">Ваши чек‑листы</div>
+          <div id="checklistList" class="checklistList"></div>
+        </aside>
+
+        <main class="main">
+          <div id="emptyState" class="emptyState">
+            Выберите монету слева или создайте новую чек‑таблицу.
+          </div>
+
+          <section id="detail" class="detail" hidden>
+            <div class="detailHeader">
+              <div class="titleBlock">
+                <input id="coinEditInput" class="coinEdit" type="text" />
+                <div class="meta" id="createdAt"></div>
+              </div>
+              <div class="detailActions">
+                <button id="saveTitleBtn" class="btn" type="button">Сохранить</button>
+                <button id="deleteBtn" class="btn danger" type="button">Удалить</button>
+              </div>
+            </div>
+
+            <div id="sections" class="sections"></div>
+          </section>
+        </main>
+      </div>
+    </div>
+
+    <script src="/app.js"></script>
+  </body>
+</html>
+
