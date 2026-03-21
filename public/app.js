@@ -11,11 +11,13 @@ const createdAt = el('createdAt');
 const saveTitleBtn = el('saveTitleBtn');
 const copyReportBtn = el('copyReportBtn');
 const deleteBtn = el('deleteBtn');
+const deleteAllChecklistsBtn = el('deleteAllChecklistsBtn');
 const sectionsEl = el('sections');
 const coinNotes = el('coinNotes');
 const setupVerdictEl = el('setupVerdict');
 const setupVerdictBody = el('setupVerdictBody');
 const themeToggleBtn = el('themeToggleBtn');
+const workflowStepsBtn = el('workflowStepsBtn');
 
 let current = null;
 let saveTimer = null;
@@ -111,6 +113,40 @@ function getTagHintFromTemplate(tagId) {
 /** Кэш id тега → URL превью-картинки из шаблона. */
 let tagHintImageByIdCache = null;
 
+/** Кэш id группы → подсказка под заголовком группы (из шаблона). */
+let groupHintByIdCache = null;
+
+function getGroupHintFromTemplate(groupId) {
+  if (!groupHintByIdCache) {
+    groupHintByIdCache = new Map();
+    const T = globalThis.CHECKLIST_TEMPLATE_BLOCKS;
+    if (T && Array.isArray(T)) {
+      for (const b of T) {
+        for (const g of b.groups || []) {
+          if (g.id && g.groupHint) groupHintByIdCache.set(g.id, g.groupHint);
+        }
+      }
+    }
+  }
+  return groupHintByIdCache.get(groupId) || '';
+}
+
+/** Кэш order блока → подсказка по ПКМ на шапке блока (из шаблона). */
+let blockHintByOrderCache = null;
+
+function getBlockHintFromTemplate(order) {
+  if (blockHintByOrderCache == null) {
+    blockHintByOrderCache = new Map();
+    const T = globalThis.CHECKLIST_TEMPLATE_BLOCKS;
+    if (T && Array.isArray(T)) {
+      for (const b of T) {
+        if (b.order != null && b.blockHint) blockHintByOrderCache.set(b.order, b.blockHint);
+      }
+    }
+  }
+  return blockHintByOrderCache.get(order) || '';
+}
+
 function getTagHintImageFromTemplate(tagId) {
   if (!tagHintImageByIdCache) {
     tagHintImageByIdCache = new Map();
@@ -128,6 +164,11 @@ function getTagHintImageFromTemplate(tagId) {
   return tagHintImageByIdCache.get(tagId) || '';
 }
 
+/** Десктоп с мышью: подсказки по ПКМ, без hover. Иначе — hover/focus как на телефоне/планшете. */
+function isDesktopFinePointer() {
+  return window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+}
+
 /** Безопасный URL для файлов с кириллицей в имени. */
 function publicImageUrl(path) {
   if (!path || typeof path !== 'string') return '';
@@ -139,6 +180,10 @@ function publicImageUrl(path) {
 let tagTooltipEl = null;
 /** @type {HTMLElement | null} */
 let tagTooltipAnchor = null;
+/** Элемент, относительно которого считается rect (например заголовок блока, а подсветка — вся шапка). */
+let tagTooltipPositionEl = null;
+/** @type { 'center' | 'left' } */
+let tagTooltipAlign = 'center';
 let tagTooltipScrollHandler = null;
 /** @type {ReturnType<typeof setTimeout> | null} */
 let tagTooltipHideTimer = null;
@@ -184,28 +229,38 @@ function ensureTagTooltip() {
 function positionTagTooltip() {
   const box = tagTooltipEl;
   if (!box || !tagTooltipAnchor || !box.classList.contains('is-visible')) return;
-  const r = tagTooltipAnchor.getBoundingClientRect();
+  const posEl = tagTooltipPositionEl || tagTooltipAnchor;
+  const r = posEl.getBoundingClientRect();
   const margin = 8;
-  const vw = window.visualViewport ? window.visualViewport.width : window.innerWidth;
-  const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+  const vv = window.visualViewport;
+  const vw = vv ? vv.width : window.innerWidth;
+  const vh = vv ? vv.height : window.innerHeight;
+  const vvx = vv ? vv.offsetLeft : 0;
+  const vvy = vv ? vv.offsetTop : 0;
   const maxW = Math.min(420, vw - margin * 2);
   box.style.maxWidth = `${maxW}px`;
-  const w = box.offsetWidth;
-  const h = box.offsetHeight;
-  let left = r.left + r.width / 2 - w / 2;
-  left = Math.max(margin, Math.min(left, vw - w - margin));
+  const w = box.offsetWidth || 1;
+  const h = box.offsetHeight || 1;
+  let left =
+    tagTooltipAlign === 'left' ? r.left : r.left + r.width / 2 - w / 2;
+  left = Math.max(vvx + margin, Math.min(left, vvx + vw - w - margin));
   let top = r.bottom + margin;
-  if (top + h > vh - margin) {
+  if (top + h > vvy + vh - margin) {
     top = r.top - margin - h;
   }
-  if (top < margin) top = margin;
+  if (top < vvy + margin) top = vvy + margin;
   box.style.left = `${left}px`;
   box.style.top = `${top}px`;
 }
 
 /**
- * @param {HTMLElement} anchor
- * @param {{ imagePath?: string, textHint?: string }} payload
+ * @param {HTMLElement} anchor — подсветка (чип или шапка блока)
+ * @param {{
+ *   imagePath?: string,
+ *   textHint?: string,
+ *   positionEl?: HTMLElement,
+ *   align?: 'center' | 'left',
+ * }} payload
  */
 function showTagTooltip(anchor, payload) {
   const imagePath = payload.imagePath && String(payload.imagePath).trim();
@@ -213,10 +268,12 @@ function showTagTooltip(anchor, payload) {
   if (!imagePath && !textHint) return;
 
   if (tagTooltipAnchor && tagTooltipAnchor !== anchor) {
-    tagTooltipAnchor.classList.remove('tagChip--previewHover');
+    tagTooltipAnchor.classList.remove('hintAnchorActive');
   }
   tagTooltipAnchor = anchor;
-  tagTooltipAnchor.classList.add('tagChip--previewHover');
+  tagTooltipAnchor.classList.add('hintAnchorActive');
+  tagTooltipPositionEl = payload.positionEl || null;
+  tagTooltipAlign = payload.align === 'left' ? 'left' : 'center';
 
   const box = ensureTagTooltip();
   const img = box.querySelector('.tagTooltipImg');
@@ -253,11 +310,24 @@ function showTagTooltip(anchor, payload) {
 function hideTagTooltip() {
   cancelHideTagTooltip();
   if (tagTooltipAnchor) {
-    tagTooltipAnchor.classList.remove('tagChip--previewHover');
+    tagTooltipAnchor.classList.remove('hintAnchorActive');
     tagTooltipAnchor = null;
   }
+  tagTooltipPositionEl = null;
+  tagTooltipAlign = 'center';
   if (tagTooltipEl) tagTooltipEl.classList.remove('is-visible');
 }
+
+document.addEventListener(
+  'mousedown',
+  (e) => {
+    if (!tagTooltipEl || !tagTooltipEl.classList.contains('is-visible')) return;
+    if (e.button !== 0) return;
+    if (tagTooltipEl.contains(/** @type {Node} */ (e.target))) return;
+    hideTagTooltip();
+  },
+  true
+);
 
 function buildBlocksFromTemplate() {
   const T = globalThis.CHECKLIST_TEMPLATE_BLOCKS;
@@ -270,9 +340,11 @@ function buildBlocksFromTemplate() {
     order: b.order,
     title: b.title,
     goal: b.goal,
+    ...(b.blockHint ? { blockHint: b.blockHint } : {}),
     groups: b.groups.map((g) => ({
       id: g.id,
       label: g.label,
+      ...(g.groupHint ? { groupHint: g.groupHint } : {}),
       tags: g.tags.map((t) => ({
         id: t.id,
         label: t.label,
@@ -452,6 +524,9 @@ function renderList(checklists) {
 function refreshList() {
   const sorted = store.checklists.slice().sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   renderList(sorted);
+  if (deleteAllChecklistsBtn) {
+    deleteAllChecklistsBtn.disabled = store.checklists.length === 0;
+  }
 }
 
 function selectChecklist(id) {
@@ -621,6 +696,39 @@ function renderBlocks(checklist) {
     head.appendChild(goal);
     card.appendChild(head);
 
+    const blockHintText =
+      (block.blockHint && String(block.blockHint)) || getBlockHintFromTemplate(block.order);
+    if (blockHintText) {
+      head.classList.add('blockHead--blockHint');
+      head.tabIndex = 0;
+      head.setAttribute('role', 'button');
+      head.setAttribute(
+        'aria-label',
+        `${block.title}. Открыть подсказку по контексту: правая кнопка мыши или фокус`
+      );
+      const openBlockHint = () =>
+        showTagTooltip(head, {
+          textHint: blockHintText,
+          positionEl: title,
+          align: 'left',
+        });
+      head.addEventListener('contextmenu', (e) => {
+        if (!isDesktopFinePointer()) return;
+        e.preventDefault();
+        openBlockHint();
+      });
+      head.addEventListener('mouseenter', () => {
+        if (isDesktopFinePointer()) return;
+        openBlockHint();
+      });
+      head.addEventListener('mouseleave', () => {
+        if (isDesktopFinePointer()) return;
+        scheduleHideTagTooltip();
+      });
+      head.addEventListener('focus', openBlockHint);
+      head.addEventListener('blur', hideTagTooltip);
+    }
+
     const body = document.createElement('div');
     body.className = 'sectionBody blockBody';
 
@@ -632,6 +740,14 @@ function renderBlocks(checklist) {
       glabel.className = 'tagGroupLabel';
       glabel.textContent = group.label;
       row.appendChild(glabel);
+
+      const groupHintText = (group.groupHint && String(group.groupHint)) || getGroupHintFromTemplate(group.id);
+      if (groupHintText) {
+        const gHint = document.createElement('div');
+        gHint.className = 'tagGroupHint';
+        gHint.textContent = groupHintText;
+        row.appendChild(gHint);
+      }
 
       const chips = document.createElement('div');
       chips.className = 'tagChips';
@@ -652,8 +768,19 @@ function renderBlocks(checklist) {
         if (hint && !imgPath) btn.classList.add('tagChip--hasTextHint');
         if (hint || imgPath) {
           const openTooltip = () => showTagTooltip(btn, { imagePath: imgPath, textHint: hint });
-          btn.addEventListener('mouseenter', openTooltip);
-          btn.addEventListener('mouseleave', scheduleHideTagTooltip);
+          btn.addEventListener('contextmenu', (e) => {
+            if (!isDesktopFinePointer()) return;
+            e.preventDefault();
+            openTooltip();
+          });
+          btn.addEventListener('mouseenter', () => {
+            if (isDesktopFinePointer()) return;
+            openTooltip();
+          });
+          btn.addEventListener('mouseleave', () => {
+            if (isDesktopFinePointer()) return;
+            scheduleHideTagTooltip();
+          });
           btn.addEventListener('focus', openTooltip);
           btn.addEventListener('blur', hideTagTooltip);
         }
@@ -691,8 +818,154 @@ function schedulePersist() {
   }, 300);
 }
 
+/** @type {HTMLElement | null} */
+let workflowOverlayEl = null;
+
+function buildWorkflowModalInnerHTML() {
+  const tf = (s) => `<span class="workflowTf">${s}</span>`;
+  return `
+<div class="workflowPanelScroll">
+  <section class="workflowStage workflowStage--green" aria-labelledby="wf-s1">
+    <h3 class="workflowStageTitle" id="wf-s1">🟢 ЭТАП 1: Анализ контекста (Scalpboard)</h3>
+    <p class="workflowP"><strong>Цель:</strong> определить «Игру» (Map).</p>
+    <p class="workflowP"><strong>Таймфрейм:</strong> ${tf('H1')} (1–2 суток) → ${tf('M15')} (последние 3–4 часа).</p>
+    <p class="workflowAction"><strong>Действие:</strong> смотрим структуру.</p>
+    <ul class="workflowList">
+      <li>Вижу лесенку вверх? → тег <strong>Long Trend</strong>.</li>
+      <li>Вижу коридор (минимум 2 касания границ)? → тег <strong>Range</strong>.</li>
+      <li>Цена «липнет» к уровню без откатов? → тег <strong>Breakout</strong>.</li>
+    </ul>
+  </section>
+
+  <section class="workflowStage workflowStage--yellow" aria-labelledby="wf-s2">
+    <h3 class="workflowStageTitle" id="wf-s2">🟡 ЭТАП 2: Ликвидации (CoinGlass Liq Heatmap)</h3>
+    <p class="workflowP"><strong>Цель:</strong> найти «Топливо» (Fuel).</p>
+    <p class="workflowP"><strong>Таймфрейм:</strong> ${tf('5m')} (ближайшие зоны).</p>
+    <p class="workflowAction"><strong>Действие:</strong> ищем яркие жёлтые полосы.</p>
+    <ul class="workflowList">
+      <li>Жирная зона сверху? → тег <strong>Liquidation Top</strong> + <strong>Heavy</strong>.</li>
+      <li>Зоны с обеих сторон канала? → тег <strong>Both Sides</strong>.</li>
+      <li>Зона только что появилась? → тег <strong>Fresh</strong>.</li>
+    </ul>
+  </section>
+
+  <section class="workflowStage workflowStage--blue" aria-labelledby="wf-s3">
+    <h3 class="workflowStageTitle" id="wf-s3">🔵 ЭТАП 3: Энергия (CoinGlass Live Data)</h3>
+    <p class="workflowP"><strong>Цель:</strong> проверить «Силу» (Engine).</p>
+    <p class="workflowP"><strong>Таймфрейм:</strong> ${tf('5m')} (последние 6–10 свечей).</p>
+    <p class="workflowAction"><strong>Действие:</strong> смотрим дельту OI и значение Funding.</p>
+    <ul class="workflowList">
+      <li>OI растёт последние 30 мин? → тег <strong>OI Rising</strong>.</li>
+      <li>Funding &gt; 0,05%? → тег <strong>Positive</strong> (лонгисты перегреты).</li>
+      <li>Funding &lt; −0,05%? → тег <strong>Negative</strong> (шортисты в ловушке).</li>
+    </ul>
+  </section>
+
+  <section class="workflowStage workflowStage--red" aria-labelledby="wf-s4">
+    <h3 class="workflowStageTitle" id="wf-s4">🔴 ЭТАП 4: Точка входа (Tiger Trade)</h3>
+    <p class="workflowP"><strong>Цель:</strong> найти «Триггер» (Trigger).</p>
+    <p class="workflowP"><strong>Таймфрейм:</strong> ${tf('M1')} (момент касания зоны).</p>
+    <p class="workflowAction"><strong>Действие:</strong> анализ стакана, ленты и кластера.</p>
+    <ul class="workflowList">
+      <li>Стоит крупная лимитка? → тег <strong>Real Wall</strong>.</li>
+      <li>Лента замедлилась перед зоной? → тег <strong>Exhaustion</strong>.</li>
+      <li>Огромный объём в хвосте свечи не пускает цену? → тег <strong>Absorption</strong>.</li>
+    </ul>
+  </section>
+
+  <section class="workflowMatrix" aria-labelledby="wf-matrix">
+    <h3 class="workflowMatrixTitle" id="wf-matrix">Сводка: шаги 1–2 + шаги 3–4 → действие</h3>
+    <p class="workflowMatrixHint">Если на шагах <strong>1–2</strong> видишь условие из первого столбца <em>и</em> на шагах <strong>3–4</strong> — из второго:</p>
+    <div class="workflowTableWrap">
+      <table class="workflowTable">
+        <thead>
+          <tr>
+            <th scope="col">Шаги 1–2</th>
+            <th scope="col">Шаги 3–4</th>
+            <th scope="col">Твоё действие</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Trend Long + Liq Bottom</td>
+            <td>OI Falling + Absorption</td>
+            <td><strong>ВХОД (Long)</strong> — дозаправка.</td>
+          </tr>
+          <tr>
+            <td>Range + Liq Top/Bottom</td>
+            <td>OI Falling + Exhaustion</td>
+            <td><strong>ВХОД (отскок)</strong> — ложный пробой.</td>
+          </tr>
+          <tr>
+            <td>Breakout + Liq Top</td>
+            <td>OI Rising + Aggressive Tape</td>
+            <td><strong>ВХОД (Long)</strong> — пробой на сквиз.</td>
+          </tr>
+          <tr>
+            <td>Trend Long + Liq Top</td>
+            <td>OI Rising + Aggressive Tape</td>
+            <td><strong>PASS (пропуск)</strong> — это магнит, шортить нельзя.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>`;
+}
+
+function ensureWorkflowModal() {
+  if (workflowOverlayEl) return workflowOverlayEl;
+  const overlay = document.createElement('div');
+  overlay.id = 'workflowOverlay';
+  overlay.className = 'workflowOverlay';
+  overlay.setAttribute('role', 'dialog');
+  overlay.setAttribute('aria-modal', 'true');
+  overlay.setAttribute('aria-labelledby', 'workflowModalTitle');
+  overlay.innerHTML = `
+    <div class="workflowPanel">
+      <div class="workflowPanelHead">
+        <h2 class="workflowPanelTitle" id="workflowModalTitle">Последовательность действий</h2>
+        <button type="button" class="workflowCloseBtn" aria-label="Закрыть">×</button>
+      </div>
+      <div class="workflowPanelBody"></div>
+    </div>`;
+  const body = overlay.querySelector('.workflowPanelBody');
+  if (body) body.innerHTML = buildWorkflowModalInnerHTML();
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) closeWorkflowModal();
+  });
+  overlay.querySelector('.workflowCloseBtn')?.addEventListener('click', closeWorkflowModal);
+  document.body.appendChild(overlay);
+  workflowOverlayEl = overlay;
+  return overlay;
+}
+
+function openWorkflowModal() {
+  ensureWorkflowModal();
+  workflowOverlayEl?.classList.add('is-open');
+  document.body.classList.add('workflowModalOpen');
+  workflowOverlayEl?.querySelector('.workflowCloseBtn')?.focus();
+}
+
+function closeWorkflowModal() {
+  workflowOverlayEl?.classList.remove('is-open');
+  document.body.classList.remove('workflowModalOpen');
+  workflowStepsBtn?.focus();
+}
+
+if (workflowStepsBtn) {
+  workflowStepsBtn.addEventListener('click', () => openWorkflowModal());
+}
+
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') hideTagTooltip();
+  if (e.key === 'Escape') {
+    if (workflowOverlayEl?.classList.contains('is-open')) {
+      e.preventDefault();
+      closeWorkflowModal();
+      return;
+    }
+    hideTagTooltip();
+  }
 });
 
 if (coinNotes) {
@@ -771,6 +1044,36 @@ deleteBtn.addEventListener('click', () => {
   refreshList();
   deleteBtn.disabled = false;
 });
+
+if (deleteAllChecklistsBtn) {
+  deleteAllChecklistsBtn.addEventListener('click', () => {
+    const n = store.checklists.length;
+    if (!n) return;
+    const ok = confirm(
+      `Удалить все чек‑листы (${n} шт.)? Данные из локального хранилища будут стёрты; отменить это действие нельзя.`
+    );
+    if (!ok) return;
+
+    deleteAllChecklistsBtn.disabled = true;
+    hideTagTooltip();
+
+    store.checklists = [];
+    current = null;
+    detail.hidden = true;
+    emptyState.hidden = false;
+    sectionsEl.innerHTML = '';
+    if (setupVerdictEl) setupVerdictEl.hidden = true;
+    if (coinNotes) coinNotes.value = '';
+    if (coinEditInput) coinEditInput.value = '';
+
+    dirty = false;
+    if (saveTimer) clearTimeout(saveTimer);
+    saveTimer = null;
+
+    saveLocalStore();
+    refreshList();
+  });
+}
 
 store = loadLocalStore();
 const legacyV1 = (() => {

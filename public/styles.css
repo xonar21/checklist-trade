@@ -137,10 +137,28 @@ body {
   background: var(--sidebar-bg);
 }
 
+.sidebarTop {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 10px;
+  margin-bottom: 10px;
+}
+
 .sidebarHeader {
   color: var(--muted);
-  margin-bottom: 10px;
+  margin-bottom: 0;
   font-weight: 600;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.btnCompact {
+  padding: 6px 10px;
+  font-size: 12px;
+  border-radius: 8px;
+  flex-shrink: 0;
 }
 
 .checklistList {
@@ -375,6 +393,16 @@ body[data-theme='light'] .setupVerdict.danger {
   letter-spacing: 0.04em;
 }
 
+.tagGroupHint {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--muted);
+  white-space: pre-line;
+  margin-top: -2px;
+  margin-bottom: 2px;
+  max-width: 100%;
+}
+
 .tagChips {
   display: flex;
   flex-wrap: wrap;
@@ -399,9 +427,22 @@ body[data-theme='light'] .setupVerdict.danger {
   cursor: help;
 }
 
-.tagChip--previewHover {
+.hintAnchorActive {
   outline: 2px solid rgba(79, 140, 255, 0.55);
   outline-offset: 2px;
+}
+
+.blockHead--blockHint {
+  cursor: help;
+  border-radius: 12px 12px 0 0;
+}
+
+.blockHead--blockHint:focus {
+  outline: none;
+}
+
+.blockHead--blockHint:focus-visible {
+  box-shadow: inset 0 0 0 2px rgba(79, 140, 255, 0.45);
 }
 
 .tagTooltip {
@@ -442,7 +483,7 @@ body[data-theme='light'] .setupVerdict.danger {
   font-size: 13px;
   line-height: 1.5;
   color: var(--text);
-  max-height: min(50vh, 280px);
+  max-height: min(70vh, 420px);
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }
@@ -582,6 +623,15 @@ body[data-theme='light'] .tagChip.active {
     padding: 12px 12px;
   }
 
+  .sidebarTop {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .sidebarTop .btnCompact {
+    width: 100%;
+  }
+
   .sidebarHeader {
     font-size: 13px;
   }
@@ -676,6 +726,234 @@ body[data-theme='light'] .tagChip.active {
   .createForm {
     flex-direction: row;
     flex-wrap: wrap;
+  }
+}
+
+/* Модалка «Последовательность действий» */
+.workflowOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10050;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 20px 14px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  background: rgba(0, 0, 0, 0.52);
+  backdrop-filter: blur(4px);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
+.workflowOverlay.is-open {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+body.workflowModalOpen {
+  overflow: hidden;
+}
+
+.workflowPanel {
+  width: 100%;
+  max-width: 720px;
+  margin: 12px 0 28px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  box-shadow: var(--shadow);
+  max-height: min(92vh, 920px);
+  display: flex;
+  flex-direction: column;
+}
+
+.workflowPanelHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.workflowPanelTitle {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 800;
+  line-height: 1.3;
+  color: var(--text);
+}
+
+.workflowCloseBtn {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--control-bg);
+  color: var(--text);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+}
+
+.workflowCloseBtn:hover {
+  border-color: var(--border-hover);
+}
+
+.workflowPanelBody {
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+}
+
+.workflowPanelScroll {
+  padding: 16px 18px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.workflowStage {
+  border-radius: 12px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  background: var(--section-card-bg);
+}
+
+.workflowStage--green {
+  border-left: 4px solid #22c55e;
+}
+
+.workflowStage--yellow {
+  border-left: 4px solid #eab308;
+}
+
+.workflowStage--blue {
+  border-left: 4px solid #3b82f6;
+}
+
+.workflowStage--red {
+  border-left: 4px solid #ef4444;
+}
+
+.workflowStageTitle {
+  margin: 0 0 10px;
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.35;
+  color: var(--text);
+}
+
+.workflowP,
+.workflowAction {
+  margin: 0 0 8px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text);
+}
+
+.workflowAction {
+  margin-top: 2px;
+}
+
+.workflowList {
+  margin: 6px 0 0;
+  padding-left: 1.25em;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text);
+}
+
+.workflowList li {
+  margin-bottom: 6px;
+}
+
+.workflowList li:last-child {
+  margin-bottom: 0;
+}
+
+.workflowTf {
+  display: inline-block;
+  padding: 2px 8px;
+  margin: 0 1px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: ui-monospace, 'Cascadia Code', monospace;
+  background: var(--control-bg);
+  border: 1px solid var(--border);
+  color: var(--accent);
+}
+
+.workflowMatrix {
+  padding-top: 4px;
+}
+
+.workflowMatrixTitle {
+  margin: 0 0 8px;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.workflowMatrixHint {
+  margin: 0 0 12px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.workflowTableWrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--section-card-bg);
+}
+
+.workflowTable {
+  width: 100%;
+  min-width: 520px;
+  border-collapse: collapse;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.workflowTable th,
+.workflowTable td {
+  padding: 10px 12px;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+}
+
+.workflowTable th {
+  background: var(--item-bg);
+  color: var(--muted);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 10px;
+}
+
+.workflowTable tbody tr:last-child td {
+  border-bottom: none;
+}
+
+@media (hover: hover) {
+  .workflowTable tbody tr:hover td {
+    background: var(--item-bg);
   }
 }
 

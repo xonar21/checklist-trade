@@ -20,9 +20,11 @@ function buildBlocksFromTemplate() {
     order: b.order,
     title: b.title,
     goal: b.goal,
+    ...(b.blockHint ? { blockHint: b.blockHint } : {}),
     groups: b.groups.map((g) => ({
       id: g.id,
       label: g.label,
+      ...(g.groupHint ? { groupHint: g.groupHint } : {}),
       tags: g.tags.map((t) => ({
         id: t.id,
         label: t.label,
