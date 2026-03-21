@@ -36,7 +36,7 @@
 
         <main class="main">
           <div id="emptyState" class="emptyState">
-            Выберите монету слева или создайте новую чек‑таблицу.
+            Выберите монету в списке или создайте новую чек‑таблицу.
           </div>
 
           <section id="detail" class="detail" hidden>
@@ -47,8 +47,24 @@
               </div>
               <div class="detailActions">
                 <button id="saveTitleBtn" class="btn" type="button">Сохранить</button>
+                <button id="copyReportBtn" class="btn" type="button">Скопировать отчёт</button>
                 <button id="deleteBtn" class="btn danger" type="button">Удалить</button>
               </div>
+            </div>
+
+            <div class="coinNotesSection">
+              <label for="coinNotes" class="notesLabel">Описание</label>
+              <textarea
+                id="coinNotes"
+                class="notesField"
+                rows="4"
+                placeholder="Заметки по ситуации по этой монете…"
+              ></textarea>
+            </div>
+
+            <div id="setupVerdict" class="setupVerdict" hidden>
+              <div class="setupVerdictTitle">Оценка сетапа</div>
+              <div id="setupVerdictBody" class="setupVerdictBody"></div>
             </div>
 
             <div id="sections" class="sections"></div>
@@ -57,6 +73,8 @@
       </div>
     </div>
 
+    <script src="/checklist-template.js"></script>
+    <script src="/setupScore.js"></script>
     <script src="/app.js"></script>
   </body>
 </html>

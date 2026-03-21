@@ -2,89 +2,90 @@ const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const { randomUUID } = require('crypto');
+const { CHECKLIST_TEMPLATE_BLOCKS } = require('./public/checklist-template.js');
 
 const app = express();
 app.use(express.json({ limit: '1mb' }));
+// Превью тегов: public/images/*.png → URL /images/*.png
 app.use(express.static(path.join(__dirname, 'public')));
 
 const DATA_DIR = path.join(__dirname, 'data');
 const DATA_PATH = path.join(DATA_DIR, 'checklists.json');
 
-// Шаблон чек-листа (все стратегии из описания).
-// Каждый элемент отдельно превращается в чекбокс (LONG/SHORT).
-const TEMPLATE = [
-  // 1) Торговля по ТРЕНДУ
-  { order: 1, section: '1. Торговля по ТРЕНДУ', direction: 'LONG', text: 'Вход на откате' },
-  { order: 1, section: '1. Торговля по ТРЕНДУ', direction: 'SHORT', text: 'Вход на отскоке' },
-  { order: 1, section: '1. Торговля по ТРЕНДУ', direction: 'LONG', text: 'Максимумы и минимумы растут (H1/M15)' },
-  { order: 1, section: '1. Торговля по ТРЕНДУ', direction: 'SHORT', text: 'Максимумы и минимумы падают (H1/M15)' },
-  { order: 1, section: '1. Торговля по ТРЕНДУ', direction: 'LONG', text: 'BTC растет или стоит в боковике' },
-  { order: 1, section: '1. Торговля по ТРЕНДУ', direction: 'SHORT', text: 'BTC падает или стоит в боковике' },
-  { order: 1, section: '1. Торговля по ТРЕНДУ', direction: 'LONG', text: 'Зона ликвидаций: снизу (желтое пятно под текущей ценой)' },
-  { order: 1, section: '1. Торговля по ТРЕНДУ', direction: 'SHORT', text: 'Зона ликвидаций: сверху (желтое пятно над текущей ценой)' },
-  { order: 1, section: '1. Торговля по ТРЕНДУ', direction: 'LONG', text: 'OI: падает на коррекции вниз (выход лонгов)' },
-  { order: 1, section: '1. Торговля по ТРЕНДУ', direction: 'SHORT', text: 'OI: падает на коррекции вверх (выход шортов)' },
-  { order: 1, section: '1. Торговля по ТРЕНДУ', direction: 'LONG', text: 'Кластеры: крупные покупки (зеленые) в хвосте свечи' },
-  { order: 1, section: '1. Торговля по ТРЕНДУ', direction: 'SHORT', text: 'Кластеры: крупные продажи (красные) в хвосте свечи' },
-  { order: 1, section: '1. Торговля по ТРЕНДУ', direction: 'LONG', text: 'Фандинг: отрицательный (усиление для роста)' },
-  { order: 1, section: '1. Торговля по ТРЕНДУ', direction: 'SHORT', text: 'Фандинг: положительный (усиление для падения)' },
+const DROP_GROUPS = new Set(['map-tf', 'map-btc', 'liq-dist']);
 
-  // 2) Зеркальный уровень
-  { order: 2, section: '2. Зеркальный уровень (ретест)', direction: 'LONG', text: 'Уровень стал поддержкой' },
-  { order: 2, section: '2. Зеркальный уровень (ретест)', direction: 'SHORT', text: 'Уровень стал сопротивлением' },
-  { order: 2, section: '2. Зеркальный уровень (ретест)', direction: 'LONG', text: 'Действие: пробили уровень вверх, возвращаемся к нему' },
-  { order: 2, section: '2. Зеркальный уровень (ретест)', direction: 'SHORT', text: 'Действие: пробили уровень вниз, возвращаемся к нему' },
-  { order: 2, section: '2. Зеркальный уровень (ретест)', direction: 'LONG', text: 'Зона ликвидаций: плотная зона на уровне или на 0.5% ниже него' },
-  { order: 2, section: '2. Зеркальный уровень (ретест)', direction: 'SHORT', text: 'Зона ликвидаций: плотная зона на уровне или на 0.5% выше него' },
-  { order: 2, section: '2. Зеркальный уровень (ретест)', direction: 'LONG', text: 'Лента (Tiger): замедление продаж при подходе к уровню' },
-  { order: 2, section: '2. Зеркальный уровень (ретест)', direction: 'SHORT', text: 'Лента (Tiger): замедление покупок при подходе к уровню' },
-  { order: 2, section: '2. Зеркальный уровень (ретест)', direction: 'LONG', text: 'Плотность: плотность под нами (на покупку)' },
-  { order: 2, section: '2. Зеркальный уровень (ретест)', direction: 'SHORT', text: 'Плотность: плотность над нами (на продажу)' },
-  { order: 2, section: '2. Зеркальный уровень (ретест)', direction: 'LONG', text: 'Вход: сетка — 1-й ордер на уровне, 4 ордера глубже' },
-  { order: 2, section: '2. Зеркальный уровень (ретест)', direction: 'SHORT', text: 'Вход: сетка — 1-й ордер на уровне, 4 ордера глубже' },
+function buildBlocksFromTemplate() {
+  return CHECKLIST_TEMPLATE_BLOCKS.map((b) => ({
+    id: randomUUID(),
+    order: b.order,
+    title: b.title,
+    goal: b.goal,
+    groups: b.groups.map((g) => ({
+      id: g.id,
+      label: g.label,
+      tags: g.tags.map((t) => ({
+        id: t.id,
+        label: t.label,
+        ...(t.hint ? { hint: t.hint } : {}),
+        ...(t.hintImage ? { hintImage: t.hintImage } : {}),
+      })),
+      selected: [],
+    })),
+  }));
+}
 
-  // 3) Отскок от уровня (боковик)
-  { order: 3, section: '3. Отскок от уровня (боковик)', direction: 'LONG', text: 'Флэт: жесткий боковик (флэт)' },
-  { order: 3, section: '3. Отскок от уровня (боковик)', direction: 'SHORT', text: 'Флэт: жесткий боковик (флэт)' },
-  { order: 3, section: '3. Отскок от уровня (боковик)', direction: 'LONG', text: 'От нижней границы' },
-  { order: 3, section: '3. Отскок от уровня (боковик)', direction: 'SHORT', text: 'От верхней границы' },
-  { order: 3, section: '3. Отскок от уровня (боковик)', direction: 'LONG', text: 'Зона ликвидаций: снизу за нижней границей боковика' },
-  { order: 3, section: '3. Отскок от уровня (боковик)', direction: 'SHORT', text: 'Зона ликвидаций: сверху за верхней границей боковика' },
-  { order: 3, section: '3. Отскок от уровня (боковик)', direction: 'LONG', text: 'Манипуляция: сквиз вниз за уровень — сбор ликвидаций' },
-  { order: 3, section: '3. Отскок от уровня (боковик)', direction: 'SHORT', text: 'Манипуляция: сквиз вверх за уровень — сбор ликвидаций' },
-  { order: 3, section: '3. Отскок от уровня (боковик)', direction: 'LONG', text: 'OI: резкий провал OI вниз в момент сквиза' },
-  { order: 3, section: '3. Отскок от уровня (боковик)', direction: 'SHORT', text: 'OI: резкий провал OI вниз в момент сквиза' },
-  { order: 3, section: '3. Отскок от уровня (боковик)', direction: 'LONG', text: 'Реакция: быстрый возврат цены выше уровня' },
-  { order: 3, section: '3. Отскок от уровня (боковик)', direction: 'SHORT', text: 'Реакция: быстрый возврат цены ниже уровня' },
+function buildChecklist(coin) {
+  const now = new Date();
+  return {
+    id: randomUUID(),
+    coin,
+    createdAt: now.toISOString(),
+    notes: '',
+    blocks: buildBlocksFromTemplate(),
+  };
+}
 
-  // 4) Пробой уровня (импульс)
-  { order: 4, section: '4. Пробой уровня (импульс)', direction: 'LONG', text: 'Пробой вверх' },
-  { order: 4, section: '4. Пробой уровня (импульс)', direction: 'SHORT', text: 'Пробой вниз' },
-  { order: 4, section: '4. Пробой уровня (импульс)', direction: 'LONG', text: 'Поджатие: свечи жмутся к сопротивлению' },
-  { order: 4, section: '4. Пробой уровня (импульс)', direction: 'SHORT', text: 'Поджатие: свечи жмутся к поддержке' },
-  { order: 4, section: '4. Пробой уровня (импульс)', direction: 'LONG', text: 'Зона ликвидаций: за уровнем (сверху) огромная желтая зона' },
-  { order: 4, section: '4. Пробой уровня (импульс)', direction: 'SHORT', text: 'Зона ликвидаций: за уровнем (снизу) огромная желтая зона' },
-  { order: 4, section: '4. Пробой уровня (импульс)', direction: 'LONG', text: 'OI: растет при подходе к уровню' },
-  { order: 4, section: '4. Пробой уровня (импульс)', direction: 'SHORT', text: 'OI: растет при подходе к уровню' },
-  { order: 4, section: '4. Пробой уровня (импульс)', direction: 'LONG', text: 'Фандинг: сильно отрицательный (шортистов зажали)' },
-  { order: 4, section: '4. Пробой уровня (импульс)', direction: 'SHORT', text: 'Фандинг: сильно положительный (лонгистов зажали)' },
-  { order: 4, section: '4. Пробой уровня (импульс)', direction: 'LONG', text: 'Лента: "полёт" зеленых принтов, плотность съедают' },
-  { order: 4, section: '4. Пробой уровня (импульс)', direction: 'SHORT', text: 'Лента: "полёт" красных принтов, плотность съедают' },
+function migrateLegacyChecklist(c) {
+  if (c.blocks && Array.isArray(c.blocks) && c.blocks.length) {
+    if (c.items === undefined) return c;
+    const { items, ...rest } = c;
+    return rest;
+  }
+  const { items, ...rest } = c;
+  return { ...rest, blocks: buildBlocksFromTemplate() };
+}
 
-  // 5) Отскок от плотности (стаканная механика)
-  { order: 5, section: '5. Отскок от плотности (стакан)', direction: 'LONG', text: 'Покупаем от лимита' },
-  { order: 5, section: '5. Отскок от плотности (стакан)', direction: 'SHORT', text: 'Продаем от лимита' },
-  { order: 5, section: '5. Отскок от плотности (стакан)', direction: 'LONG', text: 'Плотность: огромная заявка в стакане снизу' },
-  { order: 5, section: '5. Отскок от плотности (стакан)', direction: 'SHORT', text: 'Плотность: огромная заявка в стакане сверху' },
-  { order: 5, section: '5. Отскок от плотности (стакан)', direction: 'LONG', text: 'Главный риск: ликвидации снизу (если они есть — не входим)' },
-  { order: 5, section: '5. Отскок от плотности (стакан)', direction: 'SHORT', text: 'Главный риск: ликвидации сверху (если они есть — не входим)' },
-  { order: 5, section: '5. Отскок от плотности (стакан)', direction: 'LONG', text: 'Лента: мелкие красные продажи не могут пробить лимит' },
-  { order: 5, section: '5. Отскок от плотности (стакан)', direction: 'SHORT', text: 'Лента: мелкие зеленые покупки не могут пробить лимит' },
-  { order: 5, section: '5. Отскок от плотности (стакан)', direction: 'LONG', text: 'OI: статичен или падает' },
-  { order: 5, section: '5. Отскок от плотности (стакан)', direction: 'SHORT', text: 'OI: статичен или падает' },
-  { order: 5, section: '5. Отскок от плотности (стакан)', direction: 'LONG', text: 'Стоп: сразу за плотностью (разъели — выходим)' },
-  { order: 5, section: '5. Отскок от плотности (стакан)', direction: 'SHORT', text: 'Стоп: сразу за плотностью (разъели — выходим)' },
-];
+function clampGroupSelected(g) {
+  const valid = new Set((g.tags || []).map((t) => t.id));
+  const sel = (g.selected || []).filter((id) => valid.has(id));
+  return sel.length <= 1 ? sel : [sel[0]];
+}
+
+function normalizeChecklistShape(c) {
+  let notes = typeof c.notes === 'string' ? c.notes : '';
+  let blocks = c.blocks;
+  if (Array.isArray(blocks)) {
+    const fromBlocks = blocks.map((b) => b.notes).filter(Boolean).join('\n\n');
+    if (!notes && fromBlocks) notes = fromBlocks;
+    blocks = blocks.map((b) => {
+      const { logic, notes: _bn, ...rest } = b;
+      const groups = (b.groups || [])
+        .filter((g) => !DROP_GROUPS.has(g.id))
+        .map((g) => ({ ...g, selected: clampGroupSelected(g) }));
+      return { ...rest, groups };
+    });
+  }
+  const { items, ...rest } = c;
+  return { ...rest, notes, blocks };
+}
+
+function checklistNeedsResave(c) {
+  if (typeof c.notes !== 'string') return true;
+  if (c.blocks?.some((b) => b.logic != null || b.notes != null)) return true;
+  if (c.blocks?.some((b) => b.groups?.some((g) => DROP_GROUPS.has(g.id)))) return true;
+  if (c.blocks?.some((b) => b.groups?.some((g) => (g.selected?.length || 0) > 1))) return true;
+  return false;
+}
 
 function ensureDataFile() {
   if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -100,6 +101,15 @@ function loadStore() {
     const parsed = JSON.parse(raw);
     if (!parsed || typeof parsed !== 'object') return { checklists: [] };
     if (!Array.isArray(parsed.checklists)) return { checklists: [] };
+    const needsSave = parsed.checklists.some(
+      (c) =>
+        Array.isArray(c.items) ||
+        !c.blocks ||
+        !c.blocks.length ||
+        checklistNeedsResave(c)
+    );
+    parsed.checklists = parsed.checklists.map((c) => normalizeChecklistShape(migrateLegacyChecklist(c)));
+    if (needsSave) saveStore(parsed);
     return parsed;
   } catch {
     return { checklists: [] };
@@ -110,21 +120,22 @@ function saveStore(store) {
   fs.writeFileSync(DATA_PATH, JSON.stringify(store, null, 2), 'utf8');
 }
 
-function buildChecklist(coin) {
-  const now = new Date();
-  return {
-    id: randomUUID(),
-    coin,
-    createdAt: now.toISOString(),
-    items: TEMPLATE.map((t) => ({
-      id: randomUUID(),
-      order: t.order,
-      section: t.section,
-      direction: t.direction,
-      text: t.text,
-      checked: false,
-    })),
-  };
+function applyBlockPatch(checklist, incomingBlocks) {
+  if (!Array.isArray(incomingBlocks)) return;
+  const byId = new Map(checklist.blocks.map((b) => [b.id, b]));
+  for (const ib of incomingBlocks) {
+    const b = byId.get(ib?.id);
+    if (!b) continue;
+    if (!Array.isArray(ib.groups)) continue;
+    const gmap = new Map(b.groups.map((g) => [g.id, g]));
+    for (const ig of ib.groups) {
+      const g = gmap.get(ig?.id);
+      if (!g || !Array.isArray(ig.selected)) continue;
+      const valid = new Set(g.tags.map((t) => t.id));
+      const filtered = ig.selected.filter((id) => typeof id === 'string' && valid.has(id));
+      g.selected = filtered.length ? [filtered[0]] : [];
+    }
+  }
 }
 
 function summarizeChecklist(c) {
@@ -133,10 +144,7 @@ function summarizeChecklist(c) {
 
 app.get('/api/checklists', (_req, res) => {
   const store = loadStore();
-  const checklists = store.checklists
-    .slice()
-    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-
+  const checklists = store.checklists.slice().sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   res.json({ checklists: checklists.map(summarizeChecklist) });
 });
 
@@ -172,15 +180,12 @@ app.patch('/api/checklists/:id', (req, res) => {
     checklist.coin = coin;
   }
 
-  if (Array.isArray(req.body?.items)) {
-    const byId = new Map(checklist.items.map((it) => [it.id, it]));
-    for (const update of req.body.items) {
-      const itemId = update?.id;
-      if (!byId.has(itemId)) continue;
-      const checked = update?.checked;
-      if (typeof checked !== 'boolean') continue;
-      byId.get(itemId).checked = checked;
-    }
+  if (typeof req.body?.notes === 'string') {
+    checklist.notes = req.body.notes;
+  }
+
+  if (Array.isArray(req.body?.blocks)) {
+    applyBlockPatch(checklist, req.body.blocks);
   }
 
   saveStore(store);
@@ -202,4 +207,3 @@ app.listen(PORT, () => {
   // eslint-disable-next-line no-console
   console.log(`Checklist app running at http://localhost:${PORT}`);
 });
-

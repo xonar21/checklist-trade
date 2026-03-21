@@ -9,20 +9,24 @@ const detail = el('detail');
 const coinEditInput = el('coinEditInput');
 const createdAt = el('createdAt');
 const saveTitleBtn = el('saveTitleBtn');
+const copyReportBtn = el('copyReportBtn');
 const deleteBtn = el('deleteBtn');
 const sectionsEl = el('sections');
+const coinNotes = el('coinNotes');
+const setupVerdictEl = el('setupVerdict');
+const setupVerdictBody = el('setupVerdictBody');
 const themeToggleBtn = el('themeToggleBtn');
 
-let current = null; // выбранный чек-лист
-let pendingItems = new Map(); // itemId -> checked
+let current = null;
 let saveTimer = null;
+let dirty = false;
 
 function setTheme(theme) {
   document.body.dataset.theme = theme;
   try {
     localStorage.setItem('theme', theme);
   } catch {
-    // если localStorage недоступен — просто применим без сохранения
+    // ignore
   }
 
   if (themeToggleBtn) {
@@ -30,7 +34,6 @@ function setTheme(theme) {
   }
 }
 
-// Инициализация темы
 (() => {
   try {
     const saved = localStorage.getItem('theme');
@@ -38,7 +41,7 @@ function setTheme(theme) {
     const initial = saved || (prefersLight ? 'light' : 'dark');
     setTheme(initial);
   } catch {
-    // fallback: ничего не делаем, CSS по умолчанию уже тёмный
+    // ignore
   }
 
   if (themeToggleBtn) {
@@ -49,81 +52,9 @@ function setTheme(theme) {
   }
 })();
 
-// -------------------------
-// Local storage persistence
-// -------------------------
-const STORAGE_KEY = 'checklists-v1';
+const STORAGE_KEY = 'checklists-v2';
 
-// Шаблон чек-листа (все стратегии из описания).
-// Каждый элемент отдельно превращается в чекбокс (LONG/SHORT).
-const TEMPLATE = [
-  { order: 1, section: '1. Торговля по ТРЕНДУ', direction: 'LONG', text: 'Вход на откате' },
-  { order: 1, section: '1. Торговля по ТРЕНДУ', direction: 'SHORT', text: 'Вход на отскоке' },
-  { order: 1, section: '1. Торговля по ТРЕНДУ', direction: 'LONG', text: 'Максимумы и минимумы растут (H1/M15)' },
-  { order: 1, section: '1. Торговля по ТРЕНДУ', direction: 'SHORT', text: 'Максимумы и минимумы падают (H1/M15)' },
-  { order: 1, section: '1. Торговля по ТРЕНДУ', direction: 'LONG', text: 'BTC растет или стоит в боковике' },
-  { order: 1, section: '1. Торговля по ТРЕНДУ', direction: 'SHORT', text: 'BTC падает или стоит в боковике' },
-  { order: 1, section: '1. Торговля по ТРЕНДУ', direction: 'LONG', text: 'Зона ликвидаций: снизу (желтое пятно под текущей ценой)' },
-  { order: 1, section: '1. Торговля по ТРЕНДУ', direction: 'SHORT', text: 'Зона ликвидаций: сверху (желтое пятно над текущей ценой)' },
-  { order: 1, section: '1. Торговля по ТРЕНДУ', direction: 'LONG', text: 'OI: падает на коррекции вниз (выход лонгов)' },
-  { order: 1, section: '1. Торговля по ТРЕНДУ', direction: 'SHORT', text: 'OI: падает на коррекции вверх (выход шортов)' },
-  { order: 1, section: '1. Торговля по ТРЕНДУ', direction: 'LONG', text: 'Кластеры: крупные покупки (зеленые) в хвосте свечи' },
-  { order: 1, section: '1. Торговля по ТРЕНДУ', direction: 'SHORT', text: 'Кластеры: крупные продажи (красные) в хвосте свечи' },
-  { order: 1, section: '1. Торговля по ТРЕНДУ', direction: 'LONG', text: 'Фандинг: отрицательный (усиление для роста)' },
-  { order: 1, section: '1. Торговля по ТРЕНДУ', direction: 'SHORT', text: 'Фандинг: положительный (усиление для падения)' },
-
-  { order: 2, section: '2. Зеркальный уровень (ретест)', direction: 'LONG', text: 'Уровень стал поддержкой' },
-  { order: 2, section: '2. Зеркальный уровень (ретест)', direction: 'SHORT', text: 'Уровень стал сопротивлением' },
-  { order: 2, section: '2. Зеркальный уровень (ретест)', direction: 'LONG', text: 'Действие: пробили уровень вверх, возвращаемся к нему' },
-  { order: 2, section: '2. Зеркальный уровень (ретест)', direction: 'SHORT', text: 'Действие: пробили уровень вниз, возвращаемся к нему' },
-  { order: 2, section: '2. Зеркальный уровень (ретест)', direction: 'LONG', text: 'Зона ликвидаций: плотная зона на уровне или на 0.5% ниже него' },
-  { order: 2, section: '2. Зеркальный уровень (ретест)', direction: 'SHORT', text: 'Зона ликвидаций: плотная зона на уровне или на 0.5% выше него' },
-  { order: 2, section: '2. Зеркальный уровень (ретест)', direction: 'LONG', text: 'Лента (Tiger): замедление продаж при подходе к уровню' },
-  { order: 2, section: '2. Зеркальный уровень (ретест)', direction: 'SHORT', text: 'Лента (Tiger): замедление покупок при подходе к уровню' },
-  { order: 2, section: '2. Зеркальный уровень (ретест)', direction: 'LONG', text: 'Плотность: плотность под нами (на покупку)' },
-  { order: 2, section: '2. Зеркальный уровень (ретест)', direction: 'SHORT', text: 'Плотность: плотность над нами (на продажу)' },
-  { order: 2, section: '2. Зеркальный уровень (ретест)', direction: 'LONG', text: 'Вход: сетка — 1-й ордер на уровне, 4 ордера глубже' },
-  { order: 2, section: '2. Зеркальный уровень (ретест)', direction: 'SHORT', text: 'Вход: сетка — 1-й ордер на уровне, 4 ордера глубже' },
-
-  { order: 3, section: '3. Отскок от уровня (боковик)', direction: 'LONG', text: 'Флэт: жесткий боковик (флэт)' },
-  { order: 3, section: '3. Отскок от уровня (боковик)', direction: 'SHORT', text: 'Флэт: жесткий боковик (флэт)' },
-  { order: 3, section: '3. Отскок от уровня (боковик)', direction: 'LONG', text: 'От нижней границы' },
-  { order: 3, section: '3. Отскок от уровня (боковик)', direction: 'SHORT', text: 'От верхней границы' },
-  { order: 3, section: '3. Отскок от уровня (боковик)', direction: 'LONG', text: 'Зона ликвидаций: снизу за нижней границей боковика' },
-  { order: 3, section: '3. Отскок от уровня (боковик)', direction: 'SHORT', text: 'Зона ликвидаций: сверху за верхней границей боковика' },
-  { order: 3, section: '3. Отскок от уровня (боковик)', direction: 'LONG', text: 'Манипуляция: сквиз вниз за уровень — сбор ликвидаций' },
-  { order: 3, section: '3. Отскок от уровня (боковик)', direction: 'SHORT', text: 'Манипуляция: сквиз вверх за уровень — сбор ликвидаций' },
-  { order: 3, section: '3. Отскок от уровня (боковик)', direction: 'LONG', text: 'OI: резкий провал OI вниз в момент сквиза' },
-  { order: 3, section: '3. Отскок от уровня (боковик)', direction: 'SHORT', text: 'OI: резкий провал OI вниз в момент сквиза' },
-  { order: 3, section: '3. Отскок от уровня (боковик)', direction: 'LONG', text: 'Реакция: быстрый возврат цены выше уровня' },
-  { order: 3, section: '3. Отскок от уровня (боковик)', direction: 'SHORT', text: 'Реакция: быстрый возврат цены ниже уровня' },
-
-  { order: 4, section: '4. Пробой уровня (импульс)', direction: 'LONG', text: 'Пробой вверх' },
-  { order: 4, section: '4. Пробой уровня (импульс)', direction: 'SHORT', text: 'Пробой вниз' },
-  { order: 4, section: '4. Пробой уровня (импульс)', direction: 'LONG', text: 'Поджатие: свечи жмутся к сопротивлению' },
-  { order: 4, section: '4. Пробой уровня (импульс)', direction: 'SHORT', text: 'Поджатие: свечи жмутся к поддержке' },
-  { order: 4, section: '4. Пробой уровня (импульс)', direction: 'LONG', text: 'Зона ликвидаций: за уровнем (сверху) огромная желтая зона' },
-  { order: 4, section: '4. Пробой уровня (импульс)', direction: 'SHORT', text: 'Зона ликвидаций: за уровнем (снизу) огромная желтая зона' },
-  { order: 4, section: '4. Пробой уровня (импульс)', direction: 'LONG', text: 'OI: растет при подходе к уровню' },
-  { order: 4, section: '4. Пробой уровня (импульс)', direction: 'SHORT', text: 'OI: растет при подходе к уровню' },
-  { order: 4, section: '4. Пробой уровня (импульс)', direction: 'LONG', text: 'Фандинг: сильно отрицательный (шортистов зажали)' },
-  { order: 4, section: '4. Пробой уровня (импульс)', direction: 'SHORT', text: 'Фандинг: сильно положительный (лонгистов зажали)' },
-  { order: 4, section: '4. Пробой уровня (импульс)', direction: 'LONG', text: 'Лента: "полёт" зеленых принтов, плотность съедают' },
-  { order: 4, section: '4. Пробой уровня (импульс)', direction: 'SHORT', text: 'Лента: "полёт" красных принтов, плотность съедают' },
-
-  { order: 5, section: '5. Отскок от плотности (стакан)', direction: 'LONG', text: 'Покупаем от лимита' },
-  { order: 5, section: '5. Отскок от плотности (стакан)', direction: 'SHORT', text: 'Продаем от лимита' },
-  { order: 5, section: '5. Отскок от плотности (стакан)', direction: 'LONG', text: 'Плотность: огромная заявка в стакане снизу' },
-  { order: 5, section: '5. Отскок от плотности (стакан)', direction: 'SHORT', text: 'Плотность: огромная заявка в стакане сверху' },
-  { order: 5, section: '5. Отскок от плотности (стакан)', direction: 'LONG', text: 'Главный риск: ликвидации снизу (если они есть — не входим)' },
-  { order: 5, section: '5. Отскок от плотности (стакан)', direction: 'SHORT', text: 'Главный риск: ликвидации сверху (если они есть — не входим)' },
-  { order: 5, section: '5. Отскок от плотности (стакан)', direction: 'LONG', text: 'Лента: мелкие красные продажи не могут пробить лимит' },
-  { order: 5, section: '5. Отскок от плотности (стакан)', direction: 'SHORT', text: 'Лента: мелкие зеленые покупки не могут пробить лимит' },
-  { order: 5, section: '5. Отскок от плотности (стакан)', direction: 'LONG', text: 'OI: статичен или падает' },
-  { order: 5, section: '5. Отскок от плотности (стакан)', direction: 'SHORT', text: 'OI: статичен или падает' },
-  { order: 5, section: '5. Отскок от плотности (стакан)', direction: 'LONG', text: 'Стоп: сразу за плотностью (разъели — выходим)' },
-  { order: 5, section: '5. Отскок от плотности (стакан)', direction: 'SHORT', text: 'Стоп: сразу за плотностью (разъели — выходим)' },
-];
+const DROP_GROUPS = new Set(['map-tf', 'map-btc', 'liq-dist']);
 
 let store = { checklists: [] };
 
@@ -144,19 +75,251 @@ function saveLocalStore() {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
   } catch {
-    // Если localStorage недоступен/заполнен — пользователь потеряет сохранения.
-    // Но UI продолжит работать.
+    // ignore
   }
 }
 
 function uuid() {
   if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
-  // fallback без зависимости от пакетов
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
     const r = (Math.random() * 16) | 0;
     const v = c === 'x' ? r : (r & 0x3) | 0x8;
     return v.toString(16);
   });
+}
+
+/** Кэш id тега → подсказка из шаблона (для старых чек-листов без поля hint). */
+let tagHintByIdCache = null;
+
+function getTagHintFromTemplate(tagId) {
+  if (!tagHintByIdCache) {
+    tagHintByIdCache = new Map();
+    const T = globalThis.CHECKLIST_TEMPLATE_BLOCKS;
+    if (T && Array.isArray(T)) {
+      for (const b of T) {
+        for (const g of b.groups || []) {
+          for (const t of g.tags || []) {
+            if (t.id && t.hint) tagHintByIdCache.set(t.id, t.hint);
+          }
+        }
+      }
+    }
+  }
+  return tagHintByIdCache.get(tagId) || '';
+}
+
+/** Кэш id тега → URL превью-картинки из шаблона. */
+let tagHintImageByIdCache = null;
+
+function getTagHintImageFromTemplate(tagId) {
+  if (!tagHintImageByIdCache) {
+    tagHintImageByIdCache = new Map();
+    const T = globalThis.CHECKLIST_TEMPLATE_BLOCKS;
+    if (T && Array.isArray(T)) {
+      for (const b of T) {
+        for (const g of b.groups || []) {
+          for (const t of g.tags || []) {
+            if (t.id && t.hintImage) tagHintImageByIdCache.set(t.id, t.hintImage);
+          }
+        }
+      }
+    }
+  }
+  return tagHintImageByIdCache.get(tagId) || '';
+}
+
+/** Безопасный URL для файлов с кириллицей в имени. */
+function publicImageUrl(path) {
+  if (!path || typeof path !== 'string') return '';
+  const p = path.startsWith('/') ? path : `/${path}`;
+  const parts = p.split('/').filter(Boolean);
+  return `/${parts.map(encodeURIComponent).join('/')}`;
+}
+
+let tagTooltipEl = null;
+/** @type {HTMLElement | null} */
+let tagTooltipAnchor = null;
+let tagTooltipScrollHandler = null;
+/** @type {ReturnType<typeof setTimeout> | null} */
+let tagTooltipHideTimer = null;
+
+function cancelHideTagTooltip() {
+  if (tagTooltipHideTimer) {
+    clearTimeout(tagTooltipHideTimer);
+    tagTooltipHideTimer = null;
+  }
+}
+
+function scheduleHideTagTooltip() {
+  cancelHideTagTooltip();
+  tagTooltipHideTimer = setTimeout(() => {
+    tagTooltipHideTimer = null;
+    hideTagTooltip();
+  }, 220);
+}
+
+function ensureTagTooltip() {
+  if (tagTooltipEl) return tagTooltipEl;
+  const box = document.createElement('div');
+  box.className = 'tagTooltip';
+  box.setAttribute('role', 'tooltip');
+  const img = document.createElement('img');
+  img.className = 'tagTooltipImg';
+  img.alt = '';
+  const text = document.createElement('div');
+  text.className = 'tagTooltipText';
+  text.hidden = true;
+  box.appendChild(img);
+  box.appendChild(text);
+  box.addEventListener('mouseenter', cancelHideTagTooltip);
+  box.addEventListener('mouseleave', () => {
+    cancelHideTagTooltip();
+    hideTagTooltip();
+  });
+  document.body.appendChild(box);
+  tagTooltipEl = box;
+  return tagTooltipEl;
+}
+
+function positionTagTooltip() {
+  const box = tagTooltipEl;
+  if (!box || !tagTooltipAnchor || !box.classList.contains('is-visible')) return;
+  const r = tagTooltipAnchor.getBoundingClientRect();
+  const margin = 8;
+  const vw = window.visualViewport ? window.visualViewport.width : window.innerWidth;
+  const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+  const maxW = Math.min(420, vw - margin * 2);
+  box.style.maxWidth = `${maxW}px`;
+  const w = box.offsetWidth;
+  const h = box.offsetHeight;
+  let left = r.left + r.width / 2 - w / 2;
+  left = Math.max(margin, Math.min(left, vw - w - margin));
+  let top = r.bottom + margin;
+  if (top + h > vh - margin) {
+    top = r.top - margin - h;
+  }
+  if (top < margin) top = margin;
+  box.style.left = `${left}px`;
+  box.style.top = `${top}px`;
+}
+
+/**
+ * @param {HTMLElement} anchor
+ * @param {{ imagePath?: string, textHint?: string }} payload
+ */
+function showTagTooltip(anchor, payload) {
+  const imagePath = payload.imagePath && String(payload.imagePath).trim();
+  const textHint = payload.textHint && String(payload.textHint).trim();
+  if (!imagePath && !textHint) return;
+
+  if (tagTooltipAnchor && tagTooltipAnchor !== anchor) {
+    tagTooltipAnchor.classList.remove('tagChip--previewHover');
+  }
+  tagTooltipAnchor = anchor;
+  tagTooltipAnchor.classList.add('tagChip--previewHover');
+
+  const box = ensureTagTooltip();
+  const img = box.querySelector('.tagTooltipImg');
+  const textEl = box.querySelector('.tagTooltipText');
+
+  if (imagePath) {
+    img.hidden = false;
+    const url = publicImageUrl(imagePath);
+    img.src = url;
+    img.alt = (anchor.textContent && anchor.textContent.trim()) || 'Пример';
+    img.onload = () => positionTagTooltip();
+  } else {
+    img.hidden = true;
+    img.removeAttribute('src');
+  }
+
+  if (textHint) {
+    textEl.hidden = false;
+    textEl.textContent = textHint;
+  } else {
+    textEl.hidden = true;
+    textEl.textContent = '';
+  }
+
+  box.classList.add('is-visible');
+  requestAnimationFrame(() => positionTagTooltip());
+  if (!tagTooltipScrollHandler) {
+    tagTooltipScrollHandler = () => positionTagTooltip();
+    window.addEventListener('scroll', tagTooltipScrollHandler, true);
+    window.addEventListener('resize', tagTooltipScrollHandler);
+  }
+}
+
+function hideTagTooltip() {
+  cancelHideTagTooltip();
+  if (tagTooltipAnchor) {
+    tagTooltipAnchor.classList.remove('tagChip--previewHover');
+    tagTooltipAnchor = null;
+  }
+  if (tagTooltipEl) tagTooltipEl.classList.remove('is-visible');
+}
+
+function buildBlocksFromTemplate() {
+  const T = globalThis.CHECKLIST_TEMPLATE_BLOCKS;
+  if (!T || !Array.isArray(T)) {
+    console.error('CHECKLIST_TEMPLATE_BLOCKS не загружен');
+    return [];
+  }
+  return T.map((b) => ({
+    id: uuid(),
+    order: b.order,
+    title: b.title,
+    goal: b.goal,
+    groups: b.groups.map((g) => ({
+      id: g.id,
+      label: g.label,
+      tags: g.tags.map((t) => ({
+        id: t.id,
+        label: t.label,
+        ...(t.hint ? { hint: t.hint } : {}),
+        ...(t.hintImage ? { hintImage: t.hintImage } : {}),
+      })),
+      selected: [],
+    })),
+  }));
+}
+
+function migrateLegacyChecklistInner(c) {
+  if (c.blocks && Array.isArray(c.blocks) && c.blocks.length) {
+    if (c.items === undefined) return c;
+    const { items, ...rest } = c;
+    return rest;
+  }
+  const { items, ...rest } = c;
+  return { ...rest, blocks: buildBlocksFromTemplate() };
+}
+
+function clampGroupSelected(g) {
+  const valid = new Set((g.tags || []).map((t) => t.id));
+  const sel = (g.selected || []).filter((id) => valid.has(id));
+  return sel.length <= 1 ? sel : [sel[0]];
+}
+
+function normalizeChecklistShape(c) {
+  let notes = typeof c.notes === 'string' ? c.notes : '';
+  let blocks = c.blocks;
+  if (Array.isArray(blocks)) {
+    const fromBlocks = blocks.map((b) => b.notes).filter(Boolean).join('\n\n');
+    if (!notes && fromBlocks) notes = fromBlocks;
+    blocks = blocks.map((b) => {
+      const { logic, notes: _bn, ...rest } = b;
+      const groups = (b.groups || [])
+        .filter((g) => !DROP_GROUPS.has(g.id))
+        .map((g) => ({ ...g, selected: clampGroupSelected(g) }));
+      return { ...rest, groups };
+    });
+  }
+  const { items, ...rest } = c;
+  return { ...rest, notes, blocks };
+}
+
+function migrateChecklistEntry(c) {
+  return normalizeChecklistShape(migrateLegacyChecklistInner(c));
 }
 
 function buildChecklist(coin) {
@@ -165,14 +328,8 @@ function buildChecklist(coin) {
     id: uuid(),
     coin,
     createdAt: now.toISOString(),
-    items: TEMPLATE.map((t) => ({
-      id: uuid(),
-      order: t.order,
-      section: t.section,
-      direction: t.direction,
-      text: t.text,
-      checked: false,
-    })),
+    notes: '',
+    blocks: buildBlocksFromTemplate(),
   };
 }
 
@@ -180,6 +337,85 @@ function formatDate(iso) {
   if (!iso) return '';
   const d = new Date(iso);
   return d.toLocaleString('ru-RU', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+}
+
+/** Текстовый отчёт для буфера обмена: монета, время, описание, теги по блокам. */
+function buildChecklistReport() {
+  if (!current) return '';
+  const coin = (coinEditInput?.value || current.coin || '').trim() || '—';
+  const created = formatDate(current.createdAt) || '—';
+  const notesRaw = (coinNotes?.value ?? current.notes ?? '').trim();
+  const lines = [];
+  lines.push(`Монета          ${coin}`);
+  lines.push(`Дата и время    ${created}`);
+  lines.push('');
+  lines.push('ОПИСАНИЕ');
+  lines.push(notesRaw || '—');
+  lines.push('');
+  lines.push('ВЫБРАННЫЕ ТЕГИ');
+
+  const blocks = (current.blocks || []).slice().sort((a, b) => a.order - b.order);
+  for (const block of blocks) {
+    lines.push('');
+    lines.push(`▸ ${block.title}`);
+    for (const g of block.groups || []) {
+      const sel = Array.isArray(g.selected) ? g.selected : [];
+      let value = 'не выбрано';
+      if (sel.length) {
+        const labels = [];
+        for (const sid of sel) {
+          const tag = (g.tags || []).find((t) => t.id === sid);
+          labels.push(tag ? tag.label : sid);
+        }
+        value = labels.join(', ');
+      }
+      lines.push(`  • ${g.label}`);
+      lines.push(`      ${value}`);
+    }
+  }
+
+  return lines.join('\n');
+}
+
+async function copyChecklistReport() {
+  if (!current || !copyReportBtn) return;
+  const text = buildChecklistReport();
+  const prevLabel = copyReportBtn.textContent;
+  const done = () => {
+    copyReportBtn.textContent = 'Скопировано в буфер';
+    copyReportBtn.disabled = true;
+    window.setTimeout(() => {
+      copyReportBtn.textContent = prevLabel;
+      copyReportBtn.disabled = false;
+    }, 2000);
+  };
+
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(text);
+    } else {
+      throw new Error('no clipboard');
+    }
+  } catch {
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.setAttribute('readonly', '');
+      ta.style.position = 'fixed';
+      ta.style.left = '-9999px';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    } catch {
+      copyReportBtn.textContent = 'Не удалось скопировать';
+      window.setTimeout(() => {
+        copyReportBtn.textContent = prevLabel;
+      }, 2000);
+      return;
+    }
+  }
+  done();
 }
 
 function renderList(checklists) {
@@ -222,8 +458,7 @@ function selectChecklist(id) {
   current = store.checklists.find((c) => c.id === id) || null;
   if (!current) return;
 
-  // Сброс pending
-  pendingItems = new Map();
+  dirty = false;
   if (saveTimer) clearTimeout(saveTimer);
   saveTimer = null;
 
@@ -231,106 +466,241 @@ function selectChecklist(id) {
   detail.hidden = false;
   coinEditInput.value = current.coin;
   createdAt.textContent = `Создан: ${formatDate(current.createdAt)}`;
-  renderSections(current);
+  if (coinNotes) coinNotes.value = current.notes || '';
+  renderBlocks(current);
 }
 
-function renderSections(checklist) {
-  sectionsEl.innerHTML = '';
+/** В группе не более одного выбранного тега; повторный клик по тому же тегу снимает выбор. */
+function toggleTag(group, tagId) {
+  const i = group.selected.indexOf(tagId);
+  if (i >= 0) {
+    group.selected = [];
+  } else {
+    group.selected = [tagId];
+  }
+}
 
-  const sorted = (checklist.items || []).slice().sort((a, b) => {
-    const ao = a.order - b.order;
-    if (ao !== 0) return ao;
-    return a.direction.localeCompare(b.direction);
-  });
+function collectSelectedTagIds(checklist) {
+  const ids = [];
+  for (const b of checklist.blocks || []) {
+    for (const g of b.groups || []) {
+      const sel = g.selected;
+      if (!Array.isArray(sel)) continue;
+      for (const id of sel) {
+        if (typeof id === 'string' && id.length) ids.push(id);
+      }
+    }
+  }
+  return ids;
+}
 
-  const sections = new Map();
-  for (const it of sorted) {
-    const key = it.order + '|' + it.section;
-    if (!sections.has(key)) sections.set(key, { order: it.order, section: it.section, items: [] });
-    sections.get(key).items.push(it);
+function getScoreTradingSetup() {
+  if (typeof globalThis !== 'undefined' && typeof globalThis.scoreTradingSetup === 'function') {
+    return globalThis.scoreTradingSetup;
+  }
+  if (typeof window !== 'undefined' && typeof window.scoreTradingSetup === 'function') {
+    return window.scoreTradingSetup;
+  }
+  return null;
+}
+
+function updateSetupVerdict() {
+  if (!setupVerdictEl || !setupVerdictBody) return;
+  const scoreFn = getScoreTradingSetup();
+  if (!current || !scoreFn) {
+    setupVerdictEl.hidden = true;
+    return;
   }
 
-  const sectionCards = Array.from(sections.values()).sort((a, b) => a.order - b.order);
-  for (const s of sectionCards) {
+  const result = scoreFn(collectSelectedTagIds(current));
+  setupVerdictEl.hidden = false;
+  setupVerdictEl.className = 'setupVerdict ' + result.status;
+
+  setupVerdictBody.replaceChildren();
+
+  const meta = document.createElement('div');
+  meta.className = 'setupVerdictMeta';
+  const statusLabel =
+    result.status === 'danger'
+      ? 'Вход запрещён'
+      : result.status === 'warning'
+        ? 'Внимание'
+        : 'Сценарий';
+  const scoreNum = typeof result.score === 'number' ? result.score : 0;
+  const tail =
+    result.status === 'success'
+      ? result.actionType || '—'
+      : result.status === 'warning'
+        ? result.actionType && result.actionType !== 'None'
+          ? 'грязный сетап / конфликт контекста'
+          : 'сценарий не собран (нужна полная комбинация тегов для базы 50 баллов)'
+        : 'сработал красный флаг';
+  meta.textContent = `${statusLabel} · ${scoreNum} баллов · ${tail}`;
+
+  const msg = document.createElement('div');
+  msg.className = 'setupVerdictMessage';
+  msg.textContent = result.message;
+
+  setupVerdictBody.appendChild(meta);
+  setupVerdictBody.appendChild(msg);
+
+  const da = result.deepAnalysis;
+  if (da && typeof da === 'object') {
+    const deepEl = document.createElement('div');
+    deepEl.className = 'setupVerdictDeep';
+    const tier = document.createElement('div');
+    tier.className = 'setupVerdictDeepLine';
+    tier.textContent = `Риск: ${da.riskTier}. Исполнение: ${da.orderType}.`;
+    deepEl.appendChild(tier);
+    if (da.invalidationPoint) {
+      const inv = document.createElement('div');
+      inv.className = 'setupVerdictDeepLine';
+      inv.textContent = `Инвалидация: ${da.invalidationPoint}`;
+      deepEl.appendChild(inv);
+    }
+    if (da.archetype) {
+      const ar = document.createElement('div');
+      ar.className = 'setupVerdictDeepLine setupVerdictArchetype';
+      ar.textContent = `Архетип: ${da.archetype}`;
+      deepEl.appendChild(ar);
+    }
+    if (da.stopStrategy) {
+      const st = document.createElement('div');
+      st.className = 'setupVerdictDeepLine';
+      st.textContent = `Стоп-логика: ${da.stopStrategy}`;
+      deepEl.appendChild(st);
+    }
+    if (da.volumeQuality) {
+      const vq = document.createElement('div');
+      vq.className = 'setupVerdictDeepLine';
+      vq.textContent = `Качество энергии (OI × лента): ${da.volumeQuality}`;
+      deepEl.appendChild(vq);
+    }
+    setupVerdictBody.appendChild(deepEl);
+  }
+
+  if (result.details?.notes?.length) {
+    const nt = document.createElement('div');
+    nt.className = 'setupVerdictMods';
+    nt.textContent = result.details.notes.join(' ');
+    setupVerdictBody.appendChild(nt);
+  }
+
+  if (result.details?.modifiers?.length) {
+    const mods = document.createElement('div');
+    mods.className = 'setupVerdictMods';
+    mods.textContent =
+      'Модификаторы: ' +
+      result.details.modifiers.map((m) => `${m.label} (${m.delta > 0 ? '+' : ''}${m.delta})`).join('; ');
+    setupVerdictBody.appendChild(mods);
+  }
+}
+
+function renderBlocks(checklist) {
+  hideTagTooltip();
+  sectionsEl.innerHTML = '';
+
+  const blocks = (checklist.blocks || []).slice().sort((a, b) => a.order - b.order);
+
+  for (const block of blocks) {
     const card = document.createElement('div');
     card.className = 'sectionCard';
 
+    const head = document.createElement('div');
+    head.className = 'blockHead';
+
     const title = document.createElement('div');
     title.className = 'sectionTitle';
-    title.textContent = s.section;
-    card.appendChild(title);
+    title.textContent = block.title;
+
+    const goal = document.createElement('div');
+    goal.className = 'blockGoal';
+    goal.textContent = block.goal;
+
+    head.appendChild(title);
+    head.appendChild(goal);
+    card.appendChild(head);
 
     const body = document.createElement('div');
-    body.className = 'sectionBody sectionBodyTwoCol';
+    body.className = 'sectionBody blockBody';
 
-    const longCol = document.createElement('div');
-    longCol.className = 'strategyCol';
-
-    const shortCol = document.createElement('div');
-    shortCol.className = 'strategyCol';
-
-    const longHeader = document.createElement('div');
-    longHeader.className = 'colHeader long';
-    longHeader.textContent = 'LONG';
-
-    const shortHeader = document.createElement('div');
-    shortHeader.className = 'colHeader short';
-    shortHeader.textContent = 'SHORT';
-
-    longCol.appendChild(longHeader);
-    shortCol.appendChild(shortHeader);
-
-    for (const it of s.items) {
+    for (const group of block.groups || []) {
       const row = document.createElement('div');
-      row.className = 'checkRow';
+      row.className = 'tagGroup';
 
-      const checkbox = document.createElement('input');
-      checkbox.type = 'checkbox';
-      checkbox.checked = !!it.checked;
-      checkbox.id = it.id;
+      const glabel = document.createElement('div');
+      glabel.className = 'tagGroupLabel';
+      glabel.textContent = group.label;
+      row.appendChild(glabel);
 
-      const label = document.createElement('label');
-      label.setAttribute('for', it.id);
+      const chips = document.createElement('div');
+      chips.className = 'tagChips';
 
-      const pill = document.createElement('span');
-      pill.className = 'dirPill ' + (it.direction === 'LONG' ? 'long' : 'short');
-      pill.textContent = it.direction;
-
-      const text = document.createElement('span');
-      text.textContent = ' ' + it.text;
-
-      label.appendChild(pill);
-      label.appendChild(text);
-
-      checkbox.addEventListener('change', () => {
-        it.checked = checkbox.checked;
-        pendingItems.set(it.id, checkbox.checked);
-        scheduleSaveItems();
-      });
-
-      row.appendChild(checkbox);
-      row.appendChild(label);
-
-      if (it.direction === 'LONG') longCol.appendChild(row);
-      else shortCol.appendChild(row);
+      for (const tag of group.tags || []) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.dataset.tagId = tag.id;
+        btn.className = 'tagChip' + (group.selected.includes(tag.id) ? ' active' : '');
+        btn.textContent = tag.label;
+        const hint = getTagHintFromTemplate(tag.id) || (tag.hint && String(tag.hint)) || '';
+        if (hint) {
+          btn.setAttribute('aria-description', hint);
+        }
+        // Шаблон важнее сохранённого hintImage (в localStorage могли остаться старые пути с кириллицей/пробелами).
+        const imgPath = getTagHintImageFromTemplate(tag.id) || (tag.hintImage && String(tag.hintImage)) || '';
+        if (imgPath) btn.classList.add('tagChip--hasImageHint');
+        if (hint && !imgPath) btn.classList.add('tagChip--hasTextHint');
+        if (hint || imgPath) {
+          const openTooltip = () => showTagTooltip(btn, { imagePath: imgPath, textHint: hint });
+          btn.addEventListener('mouseenter', openTooltip);
+          btn.addEventListener('mouseleave', scheduleHideTagTooltip);
+          btn.addEventListener('focus', openTooltip);
+          btn.addEventListener('blur', hideTagTooltip);
+        }
+        btn.addEventListener('click', () => {
+          toggleTag(group, tag.id);
+          chips.querySelectorAll('button.tagChip').forEach((ch) => {
+            const tid = ch.dataset.tagId;
+            ch.className = 'tagChip' + (group.selected.includes(tid) ? ' active' : '');
+          });
+          schedulePersist();
+          updateSetupVerdict();
+        });
+        chips.appendChild(btn);
+      }
+      row.appendChild(chips);
+      body.appendChild(row);
     }
 
-    body.appendChild(longCol);
-    body.appendChild(shortCol);
     card.appendChild(body);
     sectionsEl.appendChild(card);
   }
+
+  updateSetupVerdict();
 }
 
-function scheduleSaveItems() {
+function schedulePersist() {
   if (!current) return;
+  dirty = true;
   if (saveTimer) clearTimeout(saveTimer);
-
   saveTimer = setTimeout(() => {
-    if (!pendingItems.size) return;
-    pendingItems = new Map();
+    saveTimer = null;
+    if (!dirty || !current) return;
+    dirty = false;
     saveLocalStore();
-  }, 250);
+  }, 300);
+}
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') hideTagTooltip();
+});
+
+if (coinNotes) {
+  coinNotes.addEventListener('input', () => {
+    if (!current) return;
+    current.notes = coinNotes.value;
+    schedulePersist();
+  });
 }
 
 createForm.addEventListener('submit', (e) => {
@@ -348,8 +718,9 @@ createForm.addEventListener('submit', (e) => {
   detail.hidden = false;
   coinEditInput.value = current.coin;
   createdAt.textContent = `Создан: ${formatDate(current.createdAt)}`;
-  renderSections(current);
-  pendingItems = new Map();
+  if (coinNotes) coinNotes.value = current.notes || '';
+  renderBlocks(current);
+  dirty = false;
   if (saveTimer) clearTimeout(saveTimer);
   saveTimer = null;
 
@@ -371,6 +742,12 @@ saveTitleBtn.addEventListener('click', () => {
   refreshList();
 });
 
+if (copyReportBtn) {
+  copyReportBtn.addEventListener('click', () => {
+    copyChecklistReport();
+  });
+}
+
 deleteBtn.addEventListener('click', () => {
   if (!current) return;
   const coin = current.coin;
@@ -384,8 +761,9 @@ deleteBtn.addEventListener('click', () => {
   detail.hidden = true;
   emptyState.hidden = false;
   sectionsEl.innerHTML = '';
+  if (setupVerdictEl) setupVerdictEl.hidden = true;
 
-  pendingItems = new Map();
+  dirty = false;
   if (saveTimer) clearTimeout(saveTimer);
   saveTimer = null;
 
@@ -394,7 +772,30 @@ deleteBtn.addEventListener('click', () => {
   deleteBtn.disabled = false;
 });
 
-// initial load
 store = loadLocalStore();
-refreshList();
+const legacyV1 = (() => {
+  try {
+    const raw = localStorage.getItem('checklists-v1');
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+})();
 
+if ((!store.checklists || !store.checklists.length) && legacyV1 && Array.isArray(legacyV1.checklists) && legacyV1.checklists.length) {
+  store = {
+    checklists: legacyV1.checklists.map(migrateChecklistEntry),
+  };
+  saveLocalStore();
+} else {
+  let changed = false;
+  store.checklists = store.checklists.map((c) => {
+    const m = migrateChecklistEntry(c);
+    if (m !== c) changed = true;
+    return m;
+  });
+  if (changed) saveLocalStore();
+}
+
+refreshList();

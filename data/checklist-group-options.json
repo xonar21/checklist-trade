@@ -1,0 +1,94 @@
+{
+  "_comment": "Справочник: все группы тегов и допустимые варианты (зеркало public/checklist-template.js).",
+  "groups": [
+    {
+      "id": "map-structure",
+      "label": "Теги структуры",
+      "blockOrder": 1,
+      "blockTitle": "Контекст рынка (The Map)",
+      "options": [
+        { "id": "map-structure-long", "label": "Long Trend" },
+        { "id": "map-structure-short", "label": "Short Trend" },
+        { "id": "map-structure-range", "label": "Range (боковик)" },
+        { "id": "map-structure-breakout", "label": "Breakout (поджатие)" }
+      ]
+    },
+    {
+      "id": "liq-place",
+      "label": "Расположение",
+      "blockOrder": 2,
+      "blockTitle": "Ликвидность (The Fuel)",
+      "options": [
+        { "id": "liq-place-top", "label": "Liquidation Top" },
+        { "id": "liq-place-bottom", "label": "Liquidation Bottom" },
+        { "id": "liq-place-both", "label": "Both Sides (с двух сторон)" }
+      ]
+    },
+    {
+      "id": "liq-density",
+      "label": "Плотность зоны (CoinGlass 5m)",
+      "blockOrder": 2,
+      "blockTitle": "Ликвидность (The Fuel)",
+      "options": [
+        { "id": "liq-density-heavy", "label": "Heavy (яркая/жирная)" },
+        { "id": "liq-density-thin", "label": "Thin (размытая)" },
+        { "id": "liq-density-fresh", "label": "Fresh (свежая)" }
+      ]
+    },
+    {
+      "id": "eng-oi",
+      "label": "Открытый интерес (OI)",
+      "blockOrder": 3,
+      "blockTitle": "Энергия движения (The Engine)",
+      "options": [
+        { "id": "eng-oi-rise", "label": "OI Rising (набор позиций)" },
+        { "id": "eng-oi-fall", "label": "OI Falling (закрытие позиций)" },
+        { "id": "eng-oi-flat", "label": "OI Flat (застой)" }
+      ]
+    },
+    {
+      "id": "eng-fund",
+      "label": "Фандинг (Funding)",
+      "blockOrder": 3,
+      "blockTitle": "Энергия движения (The Engine)",
+      "options": [
+        { "id": "eng-fund-pos", "label": "Positive (перегруз лонгов)" },
+        { "id": "eng-fund-neg", "label": "Negative (перегруз шортов)" },
+        { "id": "eng-fund-neu", "label": "Neutral" }
+      ]
+    },
+    {
+      "id": "trig-l2",
+      "label": "Плотность (Level 2)",
+      "blockOrder": 4,
+      "blockTitle": "Стакан и лента (The Trigger)",
+      "options": [
+        { "id": "trig-l2-wall", "label": "Real Wall (долгая)" },
+        { "id": "trig-l2-spoof", "label": "Spoofing (мелькает)" },
+        { "id": "trig-l2-nowalls", "label": "No Walls" }
+      ]
+    },
+    {
+      "id": "trig-tape",
+      "label": "Лента (Tape)",
+      "blockOrder": 4,
+      "blockTitle": "Стакан и лента (The Trigger)",
+      "options": [
+        { "id": "trig-tape-agg", "label": "Aggressive (сквиз)" },
+        { "id": "trig-tape-exh", "label": "Exhaustion (затухание)" },
+        { "id": "trig-tape-ice", "label": "Iceberg (скрытый объём)" }
+      ]
+    },
+    {
+      "id": "trig-clust",
+      "label": "Кластеры",
+      "blockOrder": 4,
+      "blockTitle": "Стакан и лента (The Trigger)",
+      "options": [
+        { "id": "trig-clust-buy", "label": "Buy Imbalance" },
+        { "id": "trig-clust-sell", "label": "Sell Imbalance" },
+        { "id": "trig-clust-abs", "label": "Absorption (поглощение)" }
+      ]
+    }
+  ]
+}

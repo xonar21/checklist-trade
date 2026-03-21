@@ -59,6 +59,7 @@ body {
   font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
   background: var(--bg);
   color: var(--text);
+  overflow-x: hidden;
 }
 
 .app {
@@ -91,6 +92,7 @@ body {
 
 .coinInput {
   width: min(420px, 50vw);
+  max-width: 100%;
   padding: 10px 12px;
   border-radius: 10px;
   border: 1px solid var(--border);
@@ -202,6 +204,7 @@ body {
 
 .coinEdit {
   width: min(560px, 45vw);
+  max-width: 100%;
   padding: 10px 12px;
   border-radius: 10px;
   border: 1px solid var(--border);
@@ -218,8 +221,103 @@ body {
 
 .detailActions {
   display: flex;
+  flex-wrap: wrap;
   gap: 10px;
   align-items: center;
+  justify-content: flex-end;
+}
+
+.coinNotesSection {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 18px;
+  max-width: min(960px, 100%);
+}
+
+.setupVerdict {
+  margin-bottom: 18px;
+  max-width: min(960px, 100%);
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: var(--section-card-bg);
+}
+
+.setupVerdict.success {
+  border-color: rgba(34, 197, 94, 0.45);
+  background: rgba(34, 197, 94, 0.08);
+}
+
+.setupVerdict.warning {
+  border-color: rgba(234, 179, 8, 0.55);
+  background: rgba(234, 179, 8, 0.08);
+}
+
+.setupVerdict.danger {
+  border-color: rgba(239, 68, 68, 0.55);
+  background: rgba(239, 68, 68, 0.09);
+}
+
+body[data-theme='light'] .setupVerdict.success {
+  background: rgba(16, 185, 129, 0.1);
+}
+
+body[data-theme='light'] .setupVerdict.warning {
+  background: rgba(234, 179, 8, 0.12);
+}
+
+body[data-theme='light'] .setupVerdict.danger {
+  background: rgba(239, 68, 68, 0.08);
+}
+
+.setupVerdictTitle {
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+
+.setupVerdictMeta {
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: var(--text);
+}
+
+.setupVerdictMessage {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text);
+}
+
+.setupVerdictMods {
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.setupVerdictDeep {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.setupVerdictDeepLine {
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--text);
+}
+
+.setupVerdictArchetype {
+  font-size: 12px;
+  color: var(--muted);
 }
 
 .sections {
@@ -248,95 +346,336 @@ body {
   gap: 10px;
 }
 
-.sectionBodyTwoCol {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  column-gap: 28px;
-  row-gap: 10px;
+.blockHead {
+  border-bottom: 1px solid var(--border);
 }
 
-.strategyCol {
+.blockGoal {
+  padding: 0 14px 12px;
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.blockBody {
+  gap: 14px;
+}
+
+.tagGroup {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
-.colHeader {
-  font-weight: 900;
-  letter-spacing: 0.02em;
-  padding: 6px 10px;
-  border-radius: 12px;
-  width: fit-content;
-  border: 1px solid var(--border);
+.tagGroupLabel {
+  font-size: 12px;
+  font-weight: 700;
   color: var(--muted);
-  background: rgba(255, 255, 255, 0.03);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
-body[data-theme='light'] .colHeader {
-  background: rgba(0, 0, 0, 0.03);
-}
-
-.strategyCol .colHeader {
-  margin-top: 2px;
-}
-
-.colHeader.long {
-  border-color: var(--long-border);
-  background: var(--long-bg);
-  color: var(--long-text);
-}
-
-.colHeader.short {
-  border-color: var(--short-border);
-  background: var(--short-bg);
-  color: var(--short-text);
-}
-
-.checkRow {
+.tagChips {
   display: flex;
-  gap: 10px;
-  align-items: flex-start;
-  padding: 4px 2px;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
-.checkRow label {
-  cursor: pointer;
-  line-height: 1.25;
-}
-
-.dirPill {
-  display: inline-block;
-  min-width: 72px;
-  text-align: center;
-  padding: 4px 10px;
+.tagChip {
+  font: inherit;
+  font-size: 13px;
+  padding: 8px 12px;
   border-radius: 999px;
   border: 1px solid var(--border);
+  background: var(--control-bg);
+  color: var(--text);
+  cursor: pointer;
+  line-height: 1.2;
+  text-align: left;
+}
+
+.tagChip--hasImageHint,
+.tagChip--hasTextHint {
+  cursor: help;
+}
+
+.tagChip--previewHover {
+  outline: 2px solid rgba(79, 140, 255, 0.55);
+  outline-offset: 2px;
+}
+
+.tagTooltip {
+  position: fixed;
+  z-index: 10000;
+  max-width: min(420px, calc(100vw - 16px));
+  padding: 6px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+  pointer-events: none;
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 0.12s ease;
+}
+
+.tagTooltip.is-visible {
+  visibility: visible;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.tagTooltipImg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  vertical-align: top;
+}
+
+.tagTooltipImg[hidden] {
+  display: none;
+}
+
+.tagTooltipText {
+  padding: 10px 12px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text);
+  max-height: min(50vh, 280px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.tagTooltipImg:not([hidden]) + .tagTooltipText:not([hidden]) {
+  margin-top: 6px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+
+.tagChip:hover {
+  border-color: var(--border-hover);
+}
+
+.tagChip.active {
+  border-color: rgba(79, 140, 255, 0.75);
+  background: rgba(79, 140, 255, 0.18);
+  color: var(--text);
+}
+
+body[data-theme='light'] .tagChip.active {
+  background: rgba(44, 107, 237, 0.14);
+}
+
+.notesLabel {
   font-size: 12px;
+  font-weight: 700;
   color: var(--muted);
-  background: transparent;
 }
 
-.dirPill.long {
-  border-color: var(--long-border);
-  background: var(--long-bg);
-  color: var(--long-text);
+.notesField {
+  width: 100%;
+  min-height: 88px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--control-bg);
+  color: var(--text);
+  font: inherit;
+  line-height: 1.45;
+  resize: vertical;
+  outline: none;
 }
 
-.dirPill.short {
-  border-color: var(--short-border);
-  background: var(--short-bg);
-  color: var(--short-text);
+.notesField:focus {
+  border-color: rgba(79, 140, 255, 0.55);
 }
 
-.checkRow input[type='checkbox'] {
-  margin-top: 2px;
-  width: 18px;
-  height: 18px;
+/* ——— Адаптив: планшеты и телефоны ——— */
+
+@media (max-width: 1024px) {
+  .layout {
+    grid-template-columns: minmax(260px, 320px) 1fr;
+  }
+
+  .coinInput {
+    width: min(360px, 42vw);
+  }
+
+  .coinEdit {
+    width: min(480px, 100%);
+  }
 }
 
-@media (max-width: 900px) {
-  .sectionBodyTwoCol {
+@media (max-width: 880px) {
+  .layout {
     grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 14px;
+  }
+
+  .main {
+    padding: 14px 14px calc(14px + env(safe-area-inset-bottom, 0px));
+    min-width: 0;
+  }
+
+  .coinInput {
+    width: 100%;
+    max-width: none;
+  }
+
+  .coinEdit {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .detailHeader {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+  }
+
+  .detailActions {
+    justify-content: stretch;
+  }
+
+  .detailActions .btn {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .topbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding: 12px 14px calc(12px + env(safe-area-inset-top, 0px));
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .rightControls {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .createForm {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .coinInput {
+    width: 100%;
+  }
+
+  .sidebar {
+    padding: 12px 12px;
+  }
+
+  .sidebarHeader {
+    font-size: 13px;
+  }
+
+  .listItem {
+    padding: 14px 12px;
+    min-height: 44px;
+  }
+
+  .detailActions {
+    flex-direction: column;
+  }
+
+  .detailActions .btn {
+    width: 100%;
+  }
+
+  .setupVerdict {
+    padding: 12px 12px;
+  }
+
+  .sectionTitle {
+    font-size: 15px;
+    padding: 10px 12px;
+  }
+
+  .blockGoal {
+    padding: 0 12px 10px;
+    font-size: 12px;
+  }
+
+  .sectionBody {
+    padding: 6px 10px 12px;
+  }
+
+  .tagChip {
+    min-height: 44px;
+    padding: 10px 14px;
+    font-size: 13px;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .tagChips {
+    gap: 8px;
+  }
+
+  .tagTooltip {
+    max-width: calc(100vw - 12px);
+    padding: 4px;
+  }
+
+  .tagTooltipText {
+    font-size: 12px;
+    max-height: min(45vh, 240px);
+  }
+
+  .emptyState {
+    margin-top: 24px;
+    padding: 0 4px;
+  }
+}
+
+@media (max-width: 380px) {
+  .brand {
+    font-size: 15px;
+  }
+
+  .sectionTitle {
+    font-size: 14px;
+  }
+
+  .setupVerdictMessage,
+  .setupVerdictDeepLine {
+    font-size: 12px;
+  }
+}
+
+/* Узкие экраны в альбомной ориентации */
+@media (max-height: 500px) and (orientation: landscape) {
+  .topbar {
+    position: relative;
+    flex-direction: row;
+    flex-wrap: wrap;
+    padding: 8px 12px;
+  }
+
+  .rightControls {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .createForm {
+    flex-direction: row;
+    flex-wrap: wrap;
   }
 }
 

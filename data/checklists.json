@@ -4,504 +4,197 @@
       "id": "594e7d20-dac5-4d52-94ec-7063b6179398",
       "coin": "lyn",
       "createdAt": "2026-03-20T10:22:46.116Z",
-      "items": [
+      "blocks": [
         {
-          "id": "f86b2902-4cb1-4fbe-ab4b-9bca4d97ac26",
+          "id": "8a6fdc8e-ea9f-4203-b73b-04cb8ed47854",
           "order": 1,
-          "section": "1. Торговля по ТРЕНДУ",
-          "direction": "LONG",
-          "text": "Вход на откате",
-          "checked": false
+          "title": "Контекст рынка (The Map)",
+          "goal": "Понять, в какой «игре» мы сейчас находимся.",
+          "groups": [
+            {
+              "id": "map-structure",
+              "label": "Теги структуры",
+              "tags": [
+                {
+                  "id": "map-structure-long",
+                  "label": "Long Trend"
+                },
+                {
+                  "id": "map-structure-short",
+                  "label": "Short Trend"
+                },
+                {
+                  "id": "map-structure-range",
+                  "label": "Range (боковик)"
+                },
+                {
+                  "id": "map-structure-breakout",
+                  "label": "Breakout (поджатие)"
+                }
+              ],
+              "selected": []
+            }
+          ]
         },
         {
-          "id": "e919add6-1c56-49b1-a496-4d2e54568e08",
-          "order": 1,
-          "section": "1. Торговля по ТРЕНДУ",
-          "direction": "SHORT",
-          "text": "Вход на отскоке",
-          "checked": false
-        },
-        {
-          "id": "aa07a9b1-8b0a-4c22-b968-b4bae05ef8bb",
-          "order": 1,
-          "section": "1. Торговля по ТРЕНДУ",
-          "direction": "LONG",
-          "text": "Максимумы и минимумы растут (H1/M15)",
-          "checked": false
-        },
-        {
-          "id": "8d43c718-9071-4629-8058-65b44b803112",
-          "order": 1,
-          "section": "1. Торговля по ТРЕНДУ",
-          "direction": "SHORT",
-          "text": "Максимумы и минимумы падают (H1/M15)",
-          "checked": false
-        },
-        {
-          "id": "399221d8-2068-4822-ae77-8aefdc667df0",
-          "order": 1,
-          "section": "1. Торговля по ТРЕНДУ",
-          "direction": "LONG",
-          "text": "BTC растет или стоит в боковике",
-          "checked": false
-        },
-        {
-          "id": "6d031438-eee6-412d-b557-fdd6d95e5c01",
-          "order": 1,
-          "section": "1. Торговля по ТРЕНДУ",
-          "direction": "SHORT",
-          "text": "BTC падает или стоит в боковике",
-          "checked": false
-        },
-        {
-          "id": "10605c67-5677-4515-a667-e51b3ce9d368",
-          "order": 1,
-          "section": "1. Торговля по ТРЕНДУ",
-          "direction": "LONG",
-          "text": "Зона ликвидаций: снизу (желтое пятно под текущей ценой)",
-          "checked": false
-        },
-        {
-          "id": "9d5d4d6b-ffec-49cc-b67a-4a4faaa08f51",
-          "order": 1,
-          "section": "1. Торговля по ТРЕНДУ",
-          "direction": "SHORT",
-          "text": "Зона ликвидаций: сверху (желтое пятно над текущей ценой)",
-          "checked": false
-        },
-        {
-          "id": "b392f5a8-4548-48b0-879c-62b18abe17a4",
-          "order": 1,
-          "section": "1. Торговля по ТРЕНДУ",
-          "direction": "LONG",
-          "text": "OI: падает на коррекции вниз (выход лонгов)",
-          "checked": false
-        },
-        {
-          "id": "a4046d02-ff30-43b6-922a-eb3bba353cf3",
-          "order": 1,
-          "section": "1. Торговля по ТРЕНДУ",
-          "direction": "SHORT",
-          "text": "OI: падает на коррекции вверх (выход шортов)",
-          "checked": false
-        },
-        {
-          "id": "6062a620-1065-4c18-b9eb-671e064668ac",
-          "order": 1,
-          "section": "1. Торговля по ТРЕНДУ",
-          "direction": "LONG",
-          "text": "Кластеры: крупные покупки (зеленые) в хвосте свечи",
-          "checked": false
-        },
-        {
-          "id": "87e61ca8-41e8-49ab-b1f4-43d19ed6b4ea",
-          "order": 1,
-          "section": "1. Торговля по ТРЕНДУ",
-          "direction": "SHORT",
-          "text": "Кластеры: крупные продажи (красные) в хвосте свечи",
-          "checked": false
-        },
-        {
-          "id": "50e0b5e6-bd95-473f-9dea-a71044ec895c",
-          "order": 1,
-          "section": "1. Торговля по ТРЕНДУ",
-          "direction": "LONG",
-          "text": "Фандинг: отрицательный (усиление для роста)",
-          "checked": false
-        },
-        {
-          "id": "b33c2f2f-c618-4012-adb7-fa89ab4bf949",
-          "order": 1,
-          "section": "1. Торговля по ТРЕНДУ",
-          "direction": "SHORT",
-          "text": "Фандинг: положительный (усиление для падения)",
-          "checked": false
-        },
-        {
-          "id": "0a41e780-a403-4cf3-805e-6bb95cdc2000",
+          "id": "cd2528fd-984b-4dfe-8edf-febc1e5311b3",
           "order": 2,
-          "section": "2. Зеркальный уровень (ретест)",
-          "direction": "LONG",
-          "text": "Уровень стал поддержкой",
-          "checked": false
+          "title": "Ликвидность (The Fuel)",
+          "goal": "Найти магнит для цены и понять силу зоны.",
+          "groups": [
+            {
+              "id": "liq-place",
+              "label": "Расположение",
+              "tags": [
+                {
+                  "id": "liq-place-top",
+                  "label": "Liquidation Top"
+                },
+                {
+                  "id": "liq-place-bottom",
+                  "label": "Liquidation Bottom"
+                },
+                {
+                  "id": "liq-place-both",
+                  "label": "Both Sides (с двух сторон)"
+                }
+              ],
+              "selected": []
+            },
+            {
+              "id": "liq-density",
+              "label": "Плотность зоны (CoinGlass 5m)",
+              "tags": [
+                {
+                  "id": "liq-density-heavy",
+                  "label": "Heavy (яркая/жирная)"
+                },
+                {
+                  "id": "liq-density-thin",
+                  "label": "Thin (размытая)"
+                },
+                {
+                  "id": "liq-density-fresh",
+                  "label": "Fresh (свежая)"
+                }
+              ],
+              "selected": []
+            }
+          ]
         },
         {
-          "id": "c3eb6e51-3ca0-44c1-b522-5dd9bcb41a6b",
-          "order": 2,
-          "section": "2. Зеркальный уровень (ретест)",
-          "direction": "SHORT",
-          "text": "Уровень стал сопротивлением",
-          "checked": false
-        },
-        {
-          "id": "2c1370fa-447b-46f8-8546-0798cba861b8",
-          "order": 2,
-          "section": "2. Зеркальный уровень (ретест)",
-          "direction": "LONG",
-          "text": "Действие: пробили уровень вверх, возвращаемся к нему",
-          "checked": false
-        },
-        {
-          "id": "673208ed-79a5-46f7-a76c-35f26451e211",
-          "order": 2,
-          "section": "2. Зеркальный уровень (ретест)",
-          "direction": "SHORT",
-          "text": "Действие: пробили уровень вниз, возвращаемся к нему",
-          "checked": false
-        },
-        {
-          "id": "d729a0fa-fcf2-49c9-b12f-26899f1ef256",
-          "order": 2,
-          "section": "2. Зеркальный уровень (ретест)",
-          "direction": "LONG",
-          "text": "Зона ликвидаций: плотная зона на уровне или на 0.5% ниже него",
-          "checked": false
-        },
-        {
-          "id": "a499abc7-294c-45ee-b5da-4fb1ea169428",
-          "order": 2,
-          "section": "2. Зеркальный уровень (ретест)",
-          "direction": "SHORT",
-          "text": "Зона ликвидаций: плотная зона на уровне или на 0.5% выше него",
-          "checked": false
-        },
-        {
-          "id": "2922f6f5-bcfd-446c-bdb2-de01890fa87f",
-          "order": 2,
-          "section": "2. Зеркальный уровень (ретест)",
-          "direction": "LONG",
-          "text": "Лента (Tiger): замедление продаж при подходе к уровню",
-          "checked": false
-        },
-        {
-          "id": "c7cc5be6-0a6c-4f43-871c-2e069561b84a",
-          "order": 2,
-          "section": "2. Зеркальный уровень (ретест)",
-          "direction": "SHORT",
-          "text": "Лента (Tiger): замедление покупок при подходе к уровню",
-          "checked": false
-        },
-        {
-          "id": "d6e0842e-eb6b-4184-9ef6-81c5dd96433a",
-          "order": 2,
-          "section": "2. Зеркальный уровень (ретест)",
-          "direction": "LONG",
-          "text": "Плотность: плотность под нами (на покупку)",
-          "checked": false
-        },
-        {
-          "id": "6851790e-45f0-4926-b4c9-78f8fa231612",
-          "order": 2,
-          "section": "2. Зеркальный уровень (ретест)",
-          "direction": "SHORT",
-          "text": "Плотность: плотность над нами (на продажу)",
-          "checked": false
-        },
-        {
-          "id": "4f2d615b-0b53-43fa-a9a0-d86024b7fc5f",
-          "order": 2,
-          "section": "2. Зеркальный уровень (ретест)",
-          "direction": "LONG",
-          "text": "Вход: сетка — 1-й ордер на уровне, 4 ордера глубже",
-          "checked": false
-        },
-        {
-          "id": "089832d2-79cf-4123-80d5-9eaa7f3f18ee",
-          "order": 2,
-          "section": "2. Зеркальный уровень (ретест)",
-          "direction": "SHORT",
-          "text": "Вход: сетка — 1-й ордер на уровне, 4 ордера глубже",
-          "checked": false
-        },
-        {
-          "id": "bb719678-09f8-4d64-9a42-cec265c4c7c5",
+          "id": "75a93db9-0655-473f-9ae9-3d09cb859280",
           "order": 3,
-          "section": "3. Отскок от уровня (боковик)",
-          "direction": "LONG",
-          "text": "Флэт: жесткий боковик (флэт)",
-          "checked": false
+          "title": "Энергия движения (The Engine)",
+          "goal": "Понять, заходят деньги в рынок или выходят.",
+          "groups": [
+            {
+              "id": "eng-oi",
+              "label": "Открытый интерес (OI)",
+              "tags": [
+                {
+                  "id": "eng-oi-rise",
+                  "label": "OI Rising (набор позиций)"
+                },
+                {
+                  "id": "eng-oi-fall",
+                  "label": "OI Falling (закрытие позиций)"
+                },
+                {
+                  "id": "eng-oi-flat",
+                  "label": "OI Flat (застой)"
+                }
+              ],
+              "selected": []
+            },
+            {
+              "id": "eng-fund",
+              "label": "Фандинг (Funding)",
+              "tags": [
+                {
+                  "id": "eng-fund-pos",
+                  "label": "Positive (перегруз лонгов)"
+                },
+                {
+                  "id": "eng-fund-neg",
+                  "label": "Negative (перегруз шортов)"
+                },
+                {
+                  "id": "eng-fund-neu",
+                  "label": "Neutral"
+                }
+              ],
+              "selected": []
+            }
+          ]
         },
         {
-          "id": "97a3ed10-8957-4817-99b2-72f2334897df",
-          "order": 3,
-          "section": "3. Отскок от уровня (боковик)",
-          "direction": "SHORT",
-          "text": "Флэт: жесткий боковик (флэт)",
-          "checked": false
-        },
-        {
-          "id": "4cb8a5c0-d3ab-47d2-8725-5ae0b47a615f",
-          "order": 3,
-          "section": "3. Отскок от уровня (боковик)",
-          "direction": "LONG",
-          "text": "От нижней границы",
-          "checked": false
-        },
-        {
-          "id": "ff0a74fe-b7be-4e84-8121-968272f66e12",
-          "order": 3,
-          "section": "3. Отскок от уровня (боковик)",
-          "direction": "SHORT",
-          "text": "От верхней границы",
-          "checked": false
-        },
-        {
-          "id": "ebfac2bd-7709-487b-891b-b718fe81612e",
-          "order": 3,
-          "section": "3. Отскок от уровня (боковик)",
-          "direction": "LONG",
-          "text": "Зона ликвидаций: снизу за нижней границей боковика",
-          "checked": false
-        },
-        {
-          "id": "088c24a5-d4d4-4525-8b17-3c2ad3179a78",
-          "order": 3,
-          "section": "3. Отскок от уровня (боковик)",
-          "direction": "SHORT",
-          "text": "Зона ликвидаций: сверху за верхней границей боковика",
-          "checked": false
-        },
-        {
-          "id": "89fe8b65-60cb-4bda-8db0-062a4f7f05b9",
-          "order": 3,
-          "section": "3. Отскок от уровня (боковик)",
-          "direction": "LONG",
-          "text": "Манипуляция: сквиз вниз за уровень — сбор ликвидаций",
-          "checked": false
-        },
-        {
-          "id": "631ce4b5-e27d-4995-a436-7f22861a9c70",
-          "order": 3,
-          "section": "3. Отскок от уровня (боковик)",
-          "direction": "SHORT",
-          "text": "Манипуляция: сквиз вверх за уровень — сбор ликвидаций",
-          "checked": false
-        },
-        {
-          "id": "f34eaa71-f64f-4dd8-9dc3-158c8441773c",
-          "order": 3,
-          "section": "3. Отскок от уровня (боковик)",
-          "direction": "LONG",
-          "text": "OI: резкий провал OI вниз в момент сквиза",
-          "checked": false
-        },
-        {
-          "id": "379aff88-cec3-437d-b7b0-394c5a36c0d4",
-          "order": 3,
-          "section": "3. Отскок от уровня (боковик)",
-          "direction": "SHORT",
-          "text": "OI: резкий провал OI вниз в момент сквиза",
-          "checked": false
-        },
-        {
-          "id": "c49a5d65-30ea-4545-95d7-cbd97df59540",
-          "order": 3,
-          "section": "3. Отскок от уровня (боковик)",
-          "direction": "LONG",
-          "text": "Реакция: быстрый возврат цены выше уровня",
-          "checked": false
-        },
-        {
-          "id": "f6f20241-9ce1-44c2-bc8c-85f7b52ef563",
-          "order": 3,
-          "section": "3. Отскок от уровня (боковик)",
-          "direction": "SHORT",
-          "text": "Реакция: быстрый возврат цены ниже уровня",
-          "checked": false
-        },
-        {
-          "id": "431ebc28-adb9-4560-a31a-c21ba293b58a",
+          "id": "a093d9e9-810e-416a-9c8a-e8242eada009",
           "order": 4,
-          "section": "4. Пробой уровня (импульс)",
-          "direction": "LONG",
-          "text": "Пробой вверх",
-          "checked": false
-        },
-        {
-          "id": "d0f8cb58-49e0-44a4-a491-a69ef46fc81a",
-          "order": 4,
-          "section": "4. Пробой уровня (импульс)",
-          "direction": "SHORT",
-          "text": "Пробой вниз",
-          "checked": false
-        },
-        {
-          "id": "09f0c81b-1c95-4125-a73f-60553e8aa431",
-          "order": 4,
-          "section": "4. Пробой уровня (импульс)",
-          "direction": "LONG",
-          "text": "Поджатие: свечи жмутся к сопротивлению",
-          "checked": false
-        },
-        {
-          "id": "183c586b-0420-4713-bcfb-f01825318b02",
-          "order": 4,
-          "section": "4. Пробой уровня (импульс)",
-          "direction": "SHORT",
-          "text": "Поджатие: свечи жмутся к поддержке",
-          "checked": false
-        },
-        {
-          "id": "4b9674ef-3af6-43c5-8011-2a36e25c73bc",
-          "order": 4,
-          "section": "4. Пробой уровня (импульс)",
-          "direction": "LONG",
-          "text": "Зона ликвидаций: за уровнем (сверху) огромная желтая зона",
-          "checked": false
-        },
-        {
-          "id": "16042e97-6d51-4ae1-b51a-276191e02734",
-          "order": 4,
-          "section": "4. Пробой уровня (импульс)",
-          "direction": "SHORT",
-          "text": "Зона ликвидаций: за уровнем (снизу) огромная желтая зона",
-          "checked": false
-        },
-        {
-          "id": "c3c6e21f-a5ce-401e-97e7-3a874d21536f",
-          "order": 4,
-          "section": "4. Пробой уровня (импульс)",
-          "direction": "LONG",
-          "text": "OI: растет при подходе к уровню",
-          "checked": false
-        },
-        {
-          "id": "7414ab06-65c3-4eab-882b-16b5cf86d0b1",
-          "order": 4,
-          "section": "4. Пробой уровня (импульс)",
-          "direction": "SHORT",
-          "text": "OI: растет при подходе к уровню",
-          "checked": false
-        },
-        {
-          "id": "adf379b0-94f4-4c49-aaaa-d9a0dafe4a4d",
-          "order": 4,
-          "section": "4. Пробой уровня (импульс)",
-          "direction": "LONG",
-          "text": "Фандинг: сильно отрицательный (шортистов зажали)",
-          "checked": false
-        },
-        {
-          "id": "cc0bcd05-7cfb-4c2e-a7f1-9af116440514",
-          "order": 4,
-          "section": "4. Пробой уровня (импульс)",
-          "direction": "SHORT",
-          "text": "Фандинг: сильно положительный (лонгистов зажали)",
-          "checked": false
-        },
-        {
-          "id": "1a908360-8d95-4440-a8a7-7a5b2444b6d6",
-          "order": 4,
-          "section": "4. Пробой уровня (импульс)",
-          "direction": "LONG",
-          "text": "Лента: \"полёт\" зеленых принтов, плотность съедают",
-          "checked": false
-        },
-        {
-          "id": "2e6b3fdb-e91c-4c2f-b381-27ecc7e679ad",
-          "order": 4,
-          "section": "4. Пробой уровня (импульс)",
-          "direction": "SHORT",
-          "text": "Лента: \"полёт\" красных принтов, плотность съедают",
-          "checked": false
-        },
-        {
-          "id": "a036f41d-c3b2-4249-bf3b-a0d079950099",
-          "order": 5,
-          "section": "5. Отскок от плотности (стакан)",
-          "direction": "LONG",
-          "text": "Покупаем от лимита",
-          "checked": false
-        },
-        {
-          "id": "fb5cbbc9-40ca-41b3-a3ad-0198fb914b81",
-          "order": 5,
-          "section": "5. Отскок от плотности (стакан)",
-          "direction": "SHORT",
-          "text": "Продаем от лимита",
-          "checked": false
-        },
-        {
-          "id": "4ee5ce60-a15f-48fd-9ca3-691a9aa6850d",
-          "order": 5,
-          "section": "5. Отскок от плотности (стакан)",
-          "direction": "LONG",
-          "text": "Плотность: огромная заявка в стакане снизу",
-          "checked": false
-        },
-        {
-          "id": "cc3fb22b-c7f4-47f5-9021-36593cac3d87",
-          "order": 5,
-          "section": "5. Отскок от плотности (стакан)",
-          "direction": "SHORT",
-          "text": "Плотность: огромная заявка в стакане сверху",
-          "checked": false
-        },
-        {
-          "id": "8b4f80b8-0c20-4fd8-b227-0ce298f208f0",
-          "order": 5,
-          "section": "5. Отскок от плотности (стакан)",
-          "direction": "LONG",
-          "text": "Главный риск: ликвидации снизу (если они есть — не входим)",
-          "checked": false
-        },
-        {
-          "id": "75ccf600-e0eb-49e0-8000-7e59b59d292a",
-          "order": 5,
-          "section": "5. Отскок от плотности (стакан)",
-          "direction": "SHORT",
-          "text": "Главный риск: ликвидации сверху (если они есть — не входим)",
-          "checked": false
-        },
-        {
-          "id": "ea4c2c0c-bfdc-4b75-a885-a5c332365dff",
-          "order": 5,
-          "section": "5. Отскок от плотности (стакан)",
-          "direction": "LONG",
-          "text": "Лента: мелкие красные продажи не могут пробить лимит",
-          "checked": false
-        },
-        {
-          "id": "b5406c25-3589-4911-ab22-3254f65d31b3",
-          "order": 5,
-          "section": "5. Отскок от плотности (стакан)",
-          "direction": "SHORT",
-          "text": "Лента: мелкие зеленые покупки не могут пробить лимит",
-          "checked": false
-        },
-        {
-          "id": "f4c544d7-ec46-4780-a50b-2b548c41810f",
-          "order": 5,
-          "section": "5. Отскок от плотности (стакан)",
-          "direction": "LONG",
-          "text": "OI: статичен или падает",
-          "checked": false
-        },
-        {
-          "id": "93370210-69e0-4623-b1cc-9bf2ab464470",
-          "order": 5,
-          "section": "5. Отскок от плотности (стакан)",
-          "direction": "SHORT",
-          "text": "OI: статичен или падает",
-          "checked": false
-        },
-        {
-          "id": "4a9408b4-8eb3-460a-bccc-96872e839aa9",
-          "order": 5,
-          "section": "5. Отскок от плотности (стакан)",
-          "direction": "LONG",
-          "text": "Стоп: сразу за плотностью (разъели — выходим)",
-          "checked": false
-        },
-        {
-          "id": "1c108867-7f6c-4aa4-a81d-1545352608b2",
-          "order": 5,
-          "section": "5. Отскок от плотности (стакан)",
-          "direction": "SHORT",
-          "text": "Стоп: сразу за плотностью (разъели — выходим)",
-          "checked": false
+          "title": "Стакан и лента (The Trigger)",
+          "goal": "Найти точку опоры в Tiger.Trade.",
+          "groups": [
+            {
+              "id": "trig-l2",
+              "label": "Плотность (Level 2)",
+              "tags": [
+                {
+                  "id": "trig-l2-wall",
+                  "label": "Real Wall (долгая)"
+                },
+                {
+                  "id": "trig-l2-spoof",
+                  "label": "Spoofing (мелькает)"
+                },
+                {
+                  "id": "trig-l2-nowalls",
+                  "label": "No Walls"
+                }
+              ],
+              "selected": []
+            },
+            {
+              "id": "trig-tape",
+              "label": "Лента (Tape)",
+              "tags": [
+                {
+                  "id": "trig-tape-agg",
+                  "label": "Aggressive (сквиз)"
+                },
+                {
+                  "id": "trig-tape-exh",
+                  "label": "Exhaustion (затухание)"
+                },
+                {
+                  "id": "trig-tape-ice",
+                  "label": "Iceberg (скрытый объём)"
+                }
+              ],
+              "selected": []
+            },
+            {
+              "id": "trig-clust",
+              "label": "Кластеры",
+              "tags": [
+                {
+                  "id": "trig-clust-buy",
+                  "label": "Buy Imbalance"
+                },
+                {
+                  "id": "trig-clust-sell",
+                  "label": "Sell Imbalance"
+                },
+                {
+                  "id": "trig-clust-abs",
+                  "label": "Absorption (поглощение)"
+                }
+              ],
+              "selected": []
+            }
+          ]
         }
-      ]
+      ],
+      "notes": ""
     }
   ]
 }
