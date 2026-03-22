@@ -1101,3 +1101,32 @@ body.workflowModalOpen {
   }
 }
 
+.workflowP--warn {
+  margin-top: 12px;
+  margin-bottom: 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(234, 179, 8, 0.5);
+  background: rgba(234, 179, 8, 0.1);
+  color: var(--text);
+}
+
+.workflowTable--weekDays {
+  min-width: 480px;
+}
+
+.workflowTable--weekDays tbody th[scope='row'] {
+  text-transform: none;
+  letter-spacing: normal;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text);
+  background: var(--control-bg);
+  max-width: 11rem;
+}
+
+.workflowTable--weekDays tbody tr:last-child th,
+.workflowTable--weekDays tbody tr:last-child td {
+  border-bottom: none;
+}
+

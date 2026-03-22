@@ -19,6 +19,7 @@ const setupVerdictBody = el('setupVerdictBody');
 const themeToggleBtn = el('themeToggleBtn');
 const workflowStage0Btn = el('workflowStage0Btn');
 const workflowStepsBtn = el('workflowStepsBtn');
+const weekDaysBtn = el('weekDaysBtn');
 const btcCorrelationInput = el('btcCorrelationInput');
 
 let current = null;
@@ -861,6 +862,119 @@ function schedulePersist() {
 let workflowOverlayEl = null;
 /** @type {HTMLElement | null} */
 let stage0OverlayEl = null;
+/** @type {HTMLElement | null} */
+let weekDaysOverlayEl = null;
+
+function buildWeekDaysModalInnerHTML() {
+  return `
+<div class="workflowPanelScroll">
+  <section class="workflowStage workflowStage--yellow" aria-labelledby="wd-s1">
+    <h3 class="workflowStageTitle" id="wd-s1">📉 1. Ликвидность и объёмы</h3>
+    <p class="workflowP">В выходные банки и биржи закрыты, объёмы торгов падают в <strong>2–3 раза</strong>.</p>
+    <p class="workflowP"><strong>Что это значит:</strong> «Жирные» зоны на CoinGlass в выходные на самом деле гораздо <em>тоньше</em>, чем в будни. Их легче пробить случайным рыночным ордером.</p>
+    <p class="workflowAction"><strong>Твоё действие:</strong> будь осторожен с тегом <strong>Heavy</strong>. В субботу то, что кажется «бетонной стеной», может быть разобрано за пару секунд — потому что в стакане нет глубины.</p>
+  </section>
+
+  <section class="workflowStage workflowStage--blue" aria-labelledby="wd-s2">
+    <h3 class="workflowStageTitle" id="wd-s2">🔄 2. Стратегия: Range vs Breakout</h3>
+    <p class="workflowP">Это самый важный пункт для твоего интерфейса.</p>
+    <ul class="workflowList">
+      <li><strong>Будни:</strong> хорошо работают <strong>Breakout</strong> (пробои). Есть объёмы, есть «сила», которая толкает цену сквозь уровни.</li>
+      <li><strong>Выходные:</strong> идеальное время для <strong>Range</strong> (боковик) и <strong>SFP</strong> (ложный пробой).</li>
+    </ul>
+    <p class="workflowP"><strong>Почему:</strong> у маркетмейкеров нет цели вести цену в новый тренд — им выгодно просто «пилить» толпу в обе стороны, собирая ликвидность сверху и снизу.</p>
+    <p class="workflowP workflowP--warn"><strong>ЗАПРЕТ:</strong> старайся не торговать пробои (<strong>Breakout</strong>) в выходные. В <strong>80%</strong> случаев это будет «закол» и мгновенный возврат обратно в канал.</p>
+  </section>
+
+  <section class="workflowStage workflowStage--purple" aria-labelledby="wd-s3">
+    <h3 class="workflowStageTitle" id="wd-s3">🤖 3. Власть ботов</h3>
+    <p class="workflowP">Когда людей в рынке мало, доминируют алгоритмы. Они обожают «рисовать» красивые технические фигуры, чтобы заманить ритейл.</p>
+    <p class="workflowP"><strong>Ловушка:</strong> в выходные часто рисуют идеальный «восходящий треугольник» или «флаг». Как только толпа начинает в него прыгать — боты бьют по рынку в обратную сторону.</p>
+    <p class="workflowAction"><strong>Твоё действие:</strong> в выходные тег <strong>Absorption</strong> (поглощение) в Tiger Trade становится в <strong>2 раза</strong> важнее. Если видишь, что цену «заманивают» к уровню, а в кластерах идёт поглощение — это твой сигнал на разворот.</p>
+  </section>
+
+  <section class="workflowMatrix" aria-labelledby="wd-table">
+    <h3 class="workflowMatrixTitle" id="wd-table">Таблица-фильтр: будни vs выходные</h3>
+    <div class="workflowTableWrap">
+      <table class="workflowTable workflowTable--weekDays">
+        <thead>
+          <tr>
+            <th scope="col">Параметр</th>
+            <th scope="col">Будни (Пн–Пт)</th>
+            <th scope="col">Выходные (Сб–Вс)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">Приоритет тега</th>
+            <td>Breakout / Trend</td>
+            <td>Range / SFP (закол)</td>
+          </tr>
+          <tr>
+            <th scope="row">Лента (Tape)</th>
+            <td>Агрессивная, направленная</td>
+            <td>«Дырявая», хаотичная</td>
+          </tr>
+          <tr>
+            <th scope="row">Ликвидации</th>
+            <td>Работают как «магнит» и «ускоритель»</td>
+            <td>Часто работают как «финальная точка» (разворот)</td>
+          </tr>
+          <tr>
+            <th scope="row">Корреляция с BTC</th>
+            <td>Высокая, но понятная</td>
+            <td>Часто «рассинхрон» или полная привязка</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>`;
+}
+
+function ensureWeekDaysModal() {
+  if (weekDaysOverlayEl) return weekDaysOverlayEl;
+  const overlay = document.createElement('div');
+  overlay.id = 'weekDaysOverlay';
+  overlay.className = 'workflowOverlay';
+  overlay.setAttribute('role', 'dialog');
+  overlay.setAttribute('aria-modal', 'true');
+  overlay.setAttribute('aria-labelledby', 'weekDaysModalTitle');
+  overlay.innerHTML = `
+    <div class="workflowPanel workflowPanel--weekDays">
+      <div class="workflowPanelHead">
+        <h2 class="workflowPanelTitle" id="weekDaysModalTitle">Дни недели</h2>
+        <button type="button" class="workflowCloseBtn" aria-label="Закрыть">×</button>
+      </div>
+      <div class="workflowPanelBody"></div>
+    </div>`;
+  const body = overlay.querySelector('.workflowPanelBody');
+  if (body) body.innerHTML = buildWeekDaysModalInnerHTML();
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) closeWeekDaysModal();
+  });
+  overlay.querySelector('.workflowCloseBtn')?.addEventListener('click', closeWeekDaysModal);
+  document.body.appendChild(overlay);
+  weekDaysOverlayEl = overlay;
+  return overlay;
+}
+
+function openWeekDaysModal() {
+  if (stage0OverlayEl?.classList?.contains('is-open')) closeStage0Modal();
+  if (workflowOverlayEl?.classList?.contains('is-open')) closeWorkflowModal();
+  ensureWeekDaysModal();
+  weekDaysOverlayEl?.classList.add('is-open');
+  document.body.classList.add('workflowModalOpen');
+  weekDaysOverlayEl?.querySelector('.workflowCloseBtn')?.focus();
+}
+
+function closeWeekDaysModal() {
+  weekDaysOverlayEl?.classList.remove('is-open');
+  if (!workflowOverlayEl?.classList?.contains('is-open') && !stage0OverlayEl?.classList?.contains('is-open')) {
+    document.body.classList.remove('workflowModalOpen');
+  }
+  weekDaysBtn?.focus();
+}
 
 function buildStage0ModalInnerHTML() {
   const tf = (s) => `<span class="workflowTf">${s}</span>`;
@@ -915,6 +1029,7 @@ function ensureStage0Modal() {
 
 function openStage0Modal() {
   if (workflowOverlayEl?.classList?.contains('is-open')) closeWorkflowModal();
+  if (weekDaysOverlayEl?.classList?.contains('is-open')) closeWeekDaysModal();
   ensureStage0Modal();
   stage0OverlayEl?.classList.add('is-open');
   document.body.classList.add('workflowModalOpen');
@@ -923,7 +1038,7 @@ function openStage0Modal() {
 
 function closeStage0Modal() {
   stage0OverlayEl?.classList.remove('is-open');
-  if (!workflowOverlayEl?.classList?.contains('is-open')) {
+  if (!workflowOverlayEl?.classList?.contains('is-open') && !weekDaysOverlayEl?.classList?.contains('is-open')) {
     document.body.classList.remove('workflowModalOpen');
   }
   workflowStage0Btn?.focus();
@@ -1050,6 +1165,7 @@ function ensureWorkflowModal() {
 
 function openWorkflowModal() {
   if (stage0OverlayEl?.classList?.contains('is-open')) closeStage0Modal();
+  if (weekDaysOverlayEl?.classList?.contains('is-open')) closeWeekDaysModal();
   ensureWorkflowModal();
   workflowOverlayEl?.classList.add('is-open');
   document.body.classList.add('workflowModalOpen');
@@ -1058,7 +1174,7 @@ function openWorkflowModal() {
 
 function closeWorkflowModal() {
   workflowOverlayEl?.classList.remove('is-open');
-  if (!stage0OverlayEl?.classList?.contains('is-open')) {
+  if (!stage0OverlayEl?.classList?.contains('is-open') && !weekDaysOverlayEl?.classList?.contains('is-open')) {
     document.body.classList.remove('workflowModalOpen');
   }
   workflowStepsBtn?.focus();
@@ -1072,6 +1188,10 @@ if (workflowStepsBtn) {
   workflowStepsBtn.addEventListener('click', () => openWorkflowModal());
 }
 
+if (weekDaysBtn) {
+  weekDaysBtn.addEventListener('click', () => openWeekDaysModal());
+}
+
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
     if (stage0OverlayEl?.classList?.contains('is-open')) {
@@ -1082,6 +1202,11 @@ document.addEventListener('keydown', (e) => {
     if (workflowOverlayEl?.classList?.contains('is-open')) {
       e.preventDefault();
       closeWorkflowModal();
+      return;
+    }
+    if (weekDaysOverlayEl?.classList?.contains('is-open')) {
+      e.preventDefault();
+      closeWeekDaysModal();
       return;
     }
     hideTagTooltip();
