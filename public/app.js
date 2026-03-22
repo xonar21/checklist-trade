@@ -12,6 +12,7 @@ const saveTitleBtn = el('saveTitleBtn');
 const copyReportBtn = el('copyReportBtn');
 const deleteBtn = el('deleteBtn');
 const deleteAllChecklistsBtn = el('deleteAllChecklistsBtn');
+const copyAllChecklistsBtn = el('copyAllChecklistsBtn');
 const sectionsEl = el('sections');
 const coinNotes = el('coinNotes');
 const setupVerdictEl = el('setupVerdict');
@@ -447,12 +448,25 @@ function formatDate(iso) {
   return d.toLocaleString('ru-RU', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
 }
 
-/** Текстовый отчёт для буфера обмена: монета, время, описание, теги по блокам. */
-function buildChecklistReport() {
-  if (!current) return '';
-  const coin = (coinEditInput?.value || current.coin || '').trim() || '—';
-  const created = formatDate(current.createdAt) || '—';
-  const notesRaw = (coinNotes?.value ?? current.notes ?? '').trim();
+/** Поля для отчёта: из объекта чек-листа или с учётом открытой формы (текущий выбранный). */
+function getChecklistExportFields(c) {
+  const live = current && c.id === current.id;
+  const coin = live
+    ? (coinEditInput?.value || c.coin || '').trim() || '—'
+    : (c.coin || '').trim() || '—';
+  const notesRaw = live ? (coinNotes?.value ?? c.notes ?? '').trim() : (c.notes || '').trim();
+  const btcCorr = live
+    ? normalizeBtcCorrelationStored(
+        btcCorrelationInput?.value != null ? btcCorrelationInput.value : c.btcCorrelation
+      )
+    : normalizeBtcCorrelationStored(c.btcCorrelation);
+  return { coin, notesRaw, btcCorr };
+}
+
+/** Текстовый отчёт по одному чек-листу (блоки из переданного объекта). */
+function buildChecklistReportFromChecklist(c) {
+  const { coin, notesRaw, btcCorr } = getChecklistExportFields(c);
+  const created = formatDate(c.createdAt) || '—';
   const lines = [];
   lines.push(`Монета          ${coin}`);
   lines.push(`Дата и время    ${created}`);
@@ -461,14 +475,11 @@ function buildChecklistReport() {
   lines.push(notesRaw || '—');
   lines.push('');
   lines.push('КОРРЕЛЯЦИЯ С BTC');
-  const btcCorr = normalizeBtcCorrelationStored(
-    btcCorrelationInput?.value != null ? btcCorrelationInput.value : current.btcCorrelation
-  );
   lines.push(btcCorr ? `${btcCorr}%` : '—');
   lines.push('');
   lines.push('ВЫБРАННЫЕ ТЕГИ');
 
-  const blocks = (current.blocks || []).slice().sort((a, b) => a.order - b.order);
+  const blocks = (c.blocks || []).slice().sort((a, b) => a.order - b.order);
   for (const block of blocks) {
     lines.push('');
     lines.push(`▸ ${block.title}`);
@@ -491,6 +502,101 @@ function buildChecklistReport() {
   return lines.join('\n');
 }
 
+/** Текстовый отчёт для буфера обмена: монета, время, описание, теги по блокам. */
+function buildChecklistReport() {
+  if (!current) return '';
+  return buildChecklistReportFromChecklist(current);
+}
+
+/** JSON-объект одного чек-листа для разбора ИИ. */
+function checklistToExportJson(c) {
+  const { coin, notesRaw, btcCorr } = getChecklistExportFields(c);
+  const blocks = (c.blocks || []).slice().sort((a, b) => a.order - b.order);
+  const btcNum = btcCorr === '' ? NaN : Number.parseInt(btcCorr, 10);
+  return {
+    id: c.id,
+    coin,
+    createdAt: c.createdAt,
+    notes: notesRaw,
+    btcCorrelationPercent: btcCorr === '' || Number.isNaN(btcNum) ? null : btcNum,
+    blocks: blocks.map((block) => ({
+      order: block.order,
+      title: block.title,
+      goal: block.goal || '',
+      groups: (block.groups || []).map((g) => {
+        const sel = Array.isArray(g.selected) ? g.selected : [];
+        const labels = sel.map((sid) => {
+          const tag = (g.tags || []).find((t) => t.id === sid);
+          return tag ? tag.label : sid;
+        });
+        return { label: g.label, selectedTagLabels: labels };
+      }),
+    })),
+  };
+}
+
+/** Все чек-листы: текстовые отчёты + JSON-массив в конце. */
+function buildAllChecklistsExport() {
+  const sorted = store.checklists.slice().sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  const exportedAt = new Date().toISOString();
+  const parts = [];
+  parts.push('# Trading Checklists — экспорт');
+  parts.push('format: checklist-trade-export-v1');
+  parts.push(`exportedAt: ${exportedAt}`);
+  parts.push(`count: ${sorted.length}`);
+  parts.push('');
+  parts.push(
+    'Ниже — человекочитаемые отчёты по каждой монете, затем единый JSON-массив `checklists` для автоматического разбора (ИИ).'
+  );
+  parts.push('');
+
+  sorted.forEach((c, idx) => {
+    const { coin } = getChecklistExportFields(c);
+    parts.push('═'.repeat(72));
+    parts.push(`## ${idx + 1} / ${sorted.length} — ${coin}`);
+    parts.push('═'.repeat(72));
+    parts.push(buildChecklistReportFromChecklist(c));
+    parts.push('');
+  });
+
+  parts.push('─'.repeat(72));
+  parts.push('JSON');
+  parts.push('─'.repeat(72));
+  const payload = {
+    exportVersion: 1,
+    exportedAt,
+    count: sorted.length,
+    checklists: sorted.map((c) => checklistToExportJson(c)),
+  };
+  parts.push(JSON.stringify(payload, null, 2));
+  return parts.join('\n');
+}
+
+async function copyTextToClipboard(text) {
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch {
+    // fallback
+  }
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    ta.style.position = 'fixed';
+    ta.style.left = '-9999px';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 async function copyChecklistReport() {
   if (!current || !copyReportBtn) return;
   const text = buildChecklistReport();
@@ -504,32 +610,34 @@ async function copyChecklistReport() {
     }, 2000);
   };
 
-  try {
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      await navigator.clipboard.writeText(text);
-    } else {
-      throw new Error('no clipboard');
-    }
-  } catch {
-    try {
-      const ta = document.createElement('textarea');
-      ta.value = text;
-      ta.setAttribute('readonly', '');
-      ta.style.position = 'fixed';
-      ta.style.left = '-9999px';
-      document.body.appendChild(ta);
-      ta.select();
-      document.execCommand('copy');
-      document.body.removeChild(ta);
-    } catch {
-      copyReportBtn.textContent = 'Не удалось скопировать';
-      window.setTimeout(() => {
-        copyReportBtn.textContent = prevLabel;
-      }, 2000);
-      return;
-    }
+  const ok = await copyTextToClipboard(text);
+  if (!ok) {
+    copyReportBtn.textContent = 'Не удалось скопировать';
+    window.setTimeout(() => {
+      copyReportBtn.textContent = prevLabel;
+    }, 2000);
+    return;
   }
   done();
+}
+
+async function copyAllChecklistsExport() {
+  if (!store.checklists.length || !copyAllChecklistsBtn) return;
+  const text = buildAllChecklistsExport();
+  const btn = copyAllChecklistsBtn;
+  const prevTitle = btn.getAttribute('title') || '';
+  const ok = await copyTextToClipboard(text);
+  if (!ok) {
+    btn.setAttribute('title', 'Не удалось скопировать');
+    window.setTimeout(() => btn.setAttribute('title', prevTitle), 2000);
+    return;
+  }
+  btn.setAttribute('title', 'Скопировано');
+  btn.disabled = true;
+  window.setTimeout(() => {
+    btn.setAttribute('title', prevTitle || 'Скопировать все отчёты');
+    btn.disabled = store.checklists.length === 0;
+  }, 1600);
 }
 
 function renderList(checklists) {
@@ -566,9 +674,9 @@ function renderList(checklists) {
 function refreshList() {
   const sorted = store.checklists.slice().sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   renderList(sorted);
-  if (deleteAllChecklistsBtn) {
-    deleteAllChecklistsBtn.disabled = store.checklists.length === 0;
-  }
+  const empty = store.checklists.length === 0;
+  if (deleteAllChecklistsBtn) deleteAllChecklistsBtn.disabled = empty;
+  if (copyAllChecklistsBtn) copyAllChecklistsBtn.disabled = empty;
 }
 
 function selectChecklist(id) {
@@ -586,6 +694,7 @@ function selectChecklist(id) {
   if (coinNotes) coinNotes.value = current.notes || '';
   if (btcCorrelationInput) btcCorrelationInput.value = normalizeBtcCorrelationStored(current.btcCorrelation);
   renderBlocks(current);
+  refreshList();
 }
 
 /** В группе не более одного выбранного тега; повторный клик по тому же тегу снимает выбор. */
@@ -1300,6 +1409,12 @@ deleteBtn.addEventListener('click', () => {
   refreshList();
   deleteBtn.disabled = false;
 });
+
+if (copyAllChecklistsBtn) {
+  copyAllChecklistsBtn.addEventListener('click', () => {
+    copyAllChecklistsExport();
+  });
+}
 
 if (deleteAllChecklistsBtn) {
   deleteAllChecklistsBtn.addEventListener('click', () => {
