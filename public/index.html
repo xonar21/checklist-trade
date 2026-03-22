@@ -24,6 +24,7 @@
             <button class="btn primary" type="submit">Создать</button>
           </form>
 
+          <button id="workflowStage0Btn" class="btn" type="button">Этап 0</button>
           <button id="workflowStepsBtn" class="btn" type="button">Последовательность действий</button>
           <button id="themeToggleBtn" class="btn" type="button">Светлая тема</button>
         </div>
@@ -71,6 +72,21 @@
             <div id="setupVerdict" class="setupVerdict" hidden>
               <div class="setupVerdictTitle">Оценка сетапа</div>
               <div id="setupVerdictBody" class="setupVerdictBody"></div>
+            </div>
+
+            <div class="btcCorrelationRow">
+              <label for="btcCorrelationInput" class="notesLabel">Корреляция с BTC (%)</label>
+              <input
+                id="btcCorrelationInput"
+                class="btcCorrelationInput"
+                type="text"
+                inputmode="numeric"
+                autocomplete="off"
+                maxlength="3"
+                placeholder="0–100"
+                aria-describedby="btcCorrelationHint"
+              />
+              <span id="btcCorrelationHint" class="btcCorrelationHint">Только число, для отчёта и контекста этапа 0.</span>
             </div>
 
             <div id="sections" class="sections"></div>

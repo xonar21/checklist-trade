@@ -253,6 +253,43 @@ body {
   max-width: min(960px, 100%);
 }
 
+.btcCorrelationRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  margin-bottom: 18px;
+  max-width: min(960px, 100%);
+}
+
+.btcCorrelationRow .notesLabel {
+  margin: 0;
+}
+
+.btcCorrelationInput {
+  width: 5.5rem;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--control-bg);
+  color: var(--text);
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  outline: none;
+}
+
+.btcCorrelationInput:focus {
+  border-color: rgba(79, 140, 255, 0.55);
+}
+
+.btcCorrelationHint {
+  flex: 1 1 200px;
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
 .setupVerdict {
   margin-bottom: 18px;
   max-width: min(960px, 100%);
@@ -492,6 +529,97 @@ body[data-theme='light'] .setupVerdict.danger {
   margin-top: 6px;
   padding-top: 10px;
   border-top: 1px solid var(--border);
+}
+
+/* Богатый HTML в подсказке блока (напр. «Контекст рынка») */
+.tagTooltipText--rich {
+  line-height: 1.45;
+}
+
+.mapContextHint {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.mapContextHintLead {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.35;
+  color: var(--text);
+}
+
+.mapContextHintMeta {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.mapContextStage {
+  border-radius: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  background: var(--section-card-bg);
+}
+
+.mapContextStage--trend {
+  border-left: 4px solid #22c55e;
+}
+
+.mapContextStage--range {
+  border-left: 4px solid #eab308;
+}
+
+.mapContextStage--breakout {
+  border-left: 4px solid #a855f7;
+}
+
+.mapContextStageTitle {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.35;
+  color: var(--text);
+}
+
+.mapContextDl {
+  margin: 0;
+  display: grid;
+  grid-template-columns: minmax(7.5em, 32%) 1fr;
+  gap: 4px 10px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text);
+}
+
+.mapContextDl dt {
+  margin: 0;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.mapContextDl dd {
+  margin: 0;
+}
+
+@media (max-width: 480px) {
+  .mapContextDl {
+    grid-template-columns: 1fr;
+  }
+
+  .mapContextDl dt {
+    margin-top: 6px;
+  }
+
+  .mapContextDl dt:first-child {
+    margin-top: 0;
+  }
+
+  .mapContextDl dd + dt {
+    margin-top: 6px;
+  }
 }
 
 .tagChip:hover {
@@ -844,6 +972,22 @@ body.workflowModalOpen {
 
 .workflowStage--red {
   border-left: 4px solid #ef4444;
+}
+
+.workflowStage--purple {
+  border-left: 4px solid #a855f7;
+}
+
+.workflowList--tight li {
+  margin-bottom: 4px;
+}
+
+.workflowList--tight li:last-child {
+  margin-bottom: 0;
+}
+
+.workflowAction--spaced {
+  margin-top: 14px;
 }
 
 .workflowStageTitle {

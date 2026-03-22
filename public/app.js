@@ -17,7 +17,9 @@ const coinNotes = el('coinNotes');
 const setupVerdictEl = el('setupVerdict');
 const setupVerdictBody = el('setupVerdictBody');
 const themeToggleBtn = el('themeToggleBtn');
+const workflowStage0Btn = el('workflowStage0Btn');
 const workflowStepsBtn = el('workflowStepsBtn');
+const btcCorrelationInput = el('btcCorrelationInput');
 
 let current = null;
 let saveTimer = null;
@@ -131,20 +133,20 @@ function getGroupHintFromTemplate(groupId) {
   return groupHintByIdCache.get(groupId) || '';
 }
 
-/** Кэш order блока → подсказка по ПКМ на шапке блока (из шаблона). */
-let blockHintByOrderCache = null;
+/** Кэш order блока → HTML подсказки на шапке блока (из шаблона). */
+let blockHintHtmlByOrderCache = null;
 
-function getBlockHintFromTemplate(order) {
-  if (blockHintByOrderCache == null) {
-    blockHintByOrderCache = new Map();
+function getBlockHintHtmlFromTemplate(order) {
+  if (blockHintHtmlByOrderCache == null) {
+    blockHintHtmlByOrderCache = new Map();
     const T = globalThis.CHECKLIST_TEMPLATE_BLOCKS;
     if (T && Array.isArray(T)) {
       for (const b of T) {
-        if (b.order != null && b.blockHint) blockHintByOrderCache.set(b.order, b.blockHint);
+        if (b.order != null && b.blockHintHtml) blockHintHtmlByOrderCache.set(b.order, b.blockHintHtml);
       }
     }
   }
-  return blockHintByOrderCache.get(order) || '';
+  return blockHintHtmlByOrderCache.get(order) || '';
 }
 
 function getTagHintImageFromTemplate(tagId) {
@@ -164,7 +166,7 @@ function getTagHintImageFromTemplate(tagId) {
   return tagHintImageByIdCache.get(tagId) || '';
 }
 
-/** Десктоп с мышью: подсказки по ПКМ, без hover. Иначе — hover/focus как на телефоне/планшете. */
+/** Десктоп с мышью: подсказки по ПКМ, без hover. Иначе — hover (mouseenter) на сенсоре/без fine pointer. */
 function isDesktopFinePointer() {
   return window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 }
@@ -237,7 +239,9 @@ function positionTagTooltip() {
   const vh = vv ? vv.height : window.innerHeight;
   const vvx = vv ? vv.offsetLeft : 0;
   const vvy = vv ? vv.offsetTop : 0;
-  const maxW = Math.min(420, vw - margin * 2);
+  const textEl = box.querySelector('.tagTooltipText');
+  const rich = textEl && textEl.classList.contains('tagTooltipText--rich');
+  const maxW = Math.min(rich ? 480 : 420, vw - margin * 2);
   box.style.maxWidth = `${maxW}px`;
   const w = box.offsetWidth || 1;
   const h = box.offsetHeight || 1;
@@ -258,6 +262,7 @@ function positionTagTooltip() {
  * @param {{
  *   imagePath?: string,
  *   textHint?: string,
+ *   htmlHint?: string,
  *   positionEl?: HTMLElement,
  *   align?: 'center' | 'left',
  * }} payload
@@ -265,7 +270,8 @@ function positionTagTooltip() {
 function showTagTooltip(anchor, payload) {
   const imagePath = payload.imagePath && String(payload.imagePath).trim();
   const textHint = payload.textHint && String(payload.textHint).trim();
-  if (!imagePath && !textHint) return;
+  const htmlHint = payload.htmlHint && String(payload.htmlHint).trim();
+  if (!imagePath && !textHint && !htmlHint) return;
 
   if (tagTooltipAnchor && tagTooltipAnchor !== anchor) {
     tagTooltipAnchor.classList.remove('hintAnchorActive');
@@ -290,12 +296,21 @@ function showTagTooltip(anchor, payload) {
     img.removeAttribute('src');
   }
 
-  if (textHint) {
+  if (htmlHint) {
     textEl.hidden = false;
+    textEl.textContent = '';
+    textEl.innerHTML = htmlHint;
+    textEl.classList.add('tagTooltipText--rich');
+  } else if (textHint) {
+    textEl.hidden = false;
+    textEl.innerHTML = '';
     textEl.textContent = textHint;
+    textEl.classList.remove('tagTooltipText--rich');
   } else {
     textEl.hidden = true;
     textEl.textContent = '';
+    textEl.innerHTML = '';
+    textEl.classList.remove('tagTooltipText--rich');
   }
 
   box.classList.add('is-visible');
@@ -315,7 +330,15 @@ function hideTagTooltip() {
   }
   tagTooltipPositionEl = null;
   tagTooltipAlign = 'center';
-  if (tagTooltipEl) tagTooltipEl.classList.remove('is-visible');
+  if (tagTooltipEl) {
+    const te = tagTooltipEl.querySelector('.tagTooltipText');
+    if (te) {
+      te.textContent = '';
+      te.innerHTML = '';
+      te.classList.remove('tagTooltipText--rich');
+    }
+    tagTooltipEl.classList.remove('is-visible');
+  }
 }
 
 document.addEventListener(
@@ -340,7 +363,7 @@ function buildBlocksFromTemplate() {
     order: b.order,
     title: b.title,
     goal: b.goal,
-    ...(b.blockHint ? { blockHint: b.blockHint } : {}),
+    ...(b.blockHintHtml ? { blockHintHtml: b.blockHintHtml } : {}),
     groups: b.groups.map((g) => ({
       id: g.id,
       label: g.label,
@@ -372,8 +395,19 @@ function clampGroupSelected(g) {
   return sel.length <= 1 ? sel : [sel[0]];
 }
 
+/** Корреляция с BTC: только целое 0–100 или пусто (строка в данных чек-листа). */
+function normalizeBtcCorrelationStored(v) {
+  if (v == null || v === '') return '';
+  const digits = String(v).replace(/\D/g, '');
+  if (digits === '') return '';
+  const n = parseInt(digits, 10);
+  if (Number.isNaN(n)) return '';
+  return String(Math.min(100, n));
+}
+
 function normalizeChecklistShape(c) {
   let notes = typeof c.notes === 'string' ? c.notes : '';
+  const btcCorrelation = normalizeBtcCorrelationStored(c.btcCorrelation);
   let blocks = c.blocks;
   if (Array.isArray(blocks)) {
     const fromBlocks = blocks.map((b) => b.notes).filter(Boolean).join('\n\n');
@@ -387,7 +421,7 @@ function normalizeChecklistShape(c) {
     });
   }
   const { items, ...rest } = c;
-  return { ...rest, notes, blocks };
+  return { ...rest, notes, blocks, btcCorrelation };
 }
 
 function migrateChecklistEntry(c) {
@@ -401,6 +435,7 @@ function buildChecklist(coin) {
     coin,
     createdAt: now.toISOString(),
     notes: '',
+    btcCorrelation: '',
     blocks: buildBlocksFromTemplate(),
   };
 }
@@ -423,6 +458,12 @@ function buildChecklistReport() {
   lines.push('');
   lines.push('ОПИСАНИЕ');
   lines.push(notesRaw || '—');
+  lines.push('');
+  lines.push('КОРРЕЛЯЦИЯ С BTC');
+  const btcCorr = normalizeBtcCorrelationStored(
+    btcCorrelationInput?.value != null ? btcCorrelationInput.value : current.btcCorrelation
+  );
+  lines.push(btcCorr ? `${btcCorr}%` : '—');
   lines.push('');
   lines.push('ВЫБРАННЫЕ ТЕГИ');
 
@@ -542,6 +583,7 @@ function selectChecklist(id) {
   coinEditInput.value = current.coin;
   createdAt.textContent = `Создан: ${formatDate(current.createdAt)}`;
   if (coinNotes) coinNotes.value = current.notes || '';
+  if (btcCorrelationInput) btcCorrelationInput.value = normalizeBtcCorrelationStored(current.btcCorrelation);
   renderBlocks(current);
 }
 
@@ -696,19 +738,17 @@ function renderBlocks(checklist) {
     head.appendChild(goal);
     card.appendChild(head);
 
-    const blockHintText =
-      (block.blockHint && String(block.blockHint)) || getBlockHintFromTemplate(block.order);
-    if (blockHintText) {
+    const blockHintHtml =
+      (block.blockHintHtml && String(block.blockHintHtml)) || getBlockHintHtmlFromTemplate(block.order);
+    if (blockHintHtml) {
       head.classList.add('blockHead--blockHint');
-      head.tabIndex = 0;
-      head.setAttribute('role', 'button');
       head.setAttribute(
         'aria-label',
-        `${block.title}. Открыть подсказку по контексту: правая кнопка мыши или фокус`
+        `${block.title}. Подсказка по контексту: правая кнопка мыши на десктопе; на сенсоре — наведение`
       );
       const openBlockHint = () =>
         showTagTooltip(head, {
-          textHint: blockHintText,
+          htmlHint: blockHintHtml,
           positionEl: title,
           align: 'left',
         });
@@ -725,8 +765,7 @@ function renderBlocks(checklist) {
         if (isDesktopFinePointer()) return;
         scheduleHideTagTooltip();
       });
-      head.addEventListener('focus', openBlockHint);
-      head.addEventListener('blur', hideTagTooltip);
+      // Без focus: иначе левый клик по шапке давал фокус и открывал подсказку.
     }
 
     const body = document.createElement('div');
@@ -781,8 +820,8 @@ function renderBlocks(checklist) {
             if (isDesktopFinePointer()) return;
             scheduleHideTagTooltip();
           });
-          btn.addEventListener('focus', openTooltip);
-          btn.addEventListener('blur', hideTagTooltip);
+          // Не вешаем focus/blur: левый клик фокусирует кнопку и открывал бы подсказку.
+          // На десктопе подсказка только по ПКМ; на тач — hover (mouseenter) без фокуса.
         }
         btn.addEventListener('click', () => {
           toggleTag(group, tag.id);
@@ -820,6 +859,75 @@ function schedulePersist() {
 
 /** @type {HTMLElement | null} */
 let workflowOverlayEl = null;
+/** @type {HTMLElement | null} */
+let stage0OverlayEl = null;
+
+function buildStage0ModalInnerHTML() {
+  const tf = (s) => `<span class="workflowTf">${s}</span>`;
+  return `
+<div class="workflowPanelScroll">
+  <section class="workflowStage workflowStage--purple" aria-labelledby="wf-s0">
+    <h3 class="workflowStageTitle" id="wf-s0">🟣 ЭТАП 0: Поводырь (BTC Context &amp; Корреляция)</h3>
+    <p class="workflowP"><strong>Цель:</strong> Понять, кто ведёт цену — Биток или сама монета.</p>
+
+    <p class="workflowAction"><strong>Действие 1 (Корреляция):</strong></p>
+    <ul class="workflowList workflowList--tight">
+      <li><strong>&gt; 75%:</strong> Монета ходит за BTC. Торгуем только синхронно с ним.</li>
+      <li><strong>&lt; 40%:</strong> Монета в игре (In Play). Забываем про BTC, торгуем альткоин как самостоятельный актив.</li>
+    </ul>
+
+    <p class="workflowAction workflowAction--spaced"><strong>Действие 2 (Статус BTC на ${tf('M5')}/${tf('H1')}):</strong></p>
+    <ul class="workflowList">
+      <li><strong>BTC летит (импульс):</strong> Не торгуем отскоки на альткоинах (снесут). Ищем сделки только по тренду BTC.</li>
+      <li><strong>BTC в боковике/затух:</strong> Идеальное время для скальпинга. Альткоины начинают отрабатывать свои собственные локальные уровни и плотности.</li>
+      <li><strong>BTC делает ложный пробой (закол уровня):</strong> Лучший момент для входа в альткоин в сторону отката.</li>
+    </ul>
+  </section>
+</div>`;
+}
+
+function ensureStage0Modal() {
+  if (stage0OverlayEl) return stage0OverlayEl;
+  const overlay = document.createElement('div');
+  overlay.id = 'stage0Overlay';
+  overlay.className = 'workflowOverlay';
+  overlay.setAttribute('role', 'dialog');
+  overlay.setAttribute('aria-modal', 'true');
+  overlay.setAttribute('aria-labelledby', 'stage0ModalTitle');
+  overlay.innerHTML = `
+    <div class="workflowPanel workflowPanel--stage0">
+      <div class="workflowPanelHead">
+        <h2 class="workflowPanelTitle" id="stage0ModalTitle">Этап 0 — Поводырь</h2>
+        <button type="button" class="workflowCloseBtn" aria-label="Закрыть">×</button>
+      </div>
+      <div class="workflowPanelBody"></div>
+    </div>`;
+  const body = overlay.querySelector('.workflowPanelBody');
+  if (body) body.innerHTML = buildStage0ModalInnerHTML();
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) closeStage0Modal();
+  });
+  overlay.querySelector('.workflowCloseBtn')?.addEventListener('click', closeStage0Modal);
+  document.body.appendChild(overlay);
+  stage0OverlayEl = overlay;
+  return overlay;
+}
+
+function openStage0Modal() {
+  if (workflowOverlayEl?.classList?.contains('is-open')) closeWorkflowModal();
+  ensureStage0Modal();
+  stage0OverlayEl?.classList.add('is-open');
+  document.body.classList.add('workflowModalOpen');
+  stage0OverlayEl?.querySelector('.workflowCloseBtn')?.focus();
+}
+
+function closeStage0Modal() {
+  stage0OverlayEl?.classList.remove('is-open');
+  if (!workflowOverlayEl?.classList?.contains('is-open')) {
+    document.body.classList.remove('workflowModalOpen');
+  }
+  workflowStage0Btn?.focus();
+}
 
 function buildWorkflowModalInnerHTML() {
   const tf = (s) => `<span class="workflowTf">${s}</span>`;
@@ -941,6 +1049,7 @@ function ensureWorkflowModal() {
 }
 
 function openWorkflowModal() {
+  if (stage0OverlayEl?.classList?.contains('is-open')) closeStage0Modal();
   ensureWorkflowModal();
   workflowOverlayEl?.classList.add('is-open');
   document.body.classList.add('workflowModalOpen');
@@ -949,8 +1058,14 @@ function openWorkflowModal() {
 
 function closeWorkflowModal() {
   workflowOverlayEl?.classList.remove('is-open');
-  document.body.classList.remove('workflowModalOpen');
+  if (!stage0OverlayEl?.classList?.contains('is-open')) {
+    document.body.classList.remove('workflowModalOpen');
+  }
   workflowStepsBtn?.focus();
+}
+
+if (workflowStage0Btn) {
+  workflowStage0Btn.addEventListener('click', () => openStage0Modal());
 }
 
 if (workflowStepsBtn) {
@@ -959,7 +1074,12 @@ if (workflowStepsBtn) {
 
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
-    if (workflowOverlayEl?.classList.contains('is-open')) {
+    if (stage0OverlayEl?.classList?.contains('is-open')) {
+      e.preventDefault();
+      closeStage0Modal();
+      return;
+    }
+    if (workflowOverlayEl?.classList?.contains('is-open')) {
       e.preventDefault();
       closeWorkflowModal();
       return;
@@ -972,6 +1092,16 @@ if (coinNotes) {
   coinNotes.addEventListener('input', () => {
     if (!current) return;
     current.notes = coinNotes.value;
+    schedulePersist();
+  });
+}
+
+if (btcCorrelationInput) {
+  btcCorrelationInput.addEventListener('input', () => {
+    if (!current) return;
+    const sanitized = normalizeBtcCorrelationStored(btcCorrelationInput.value);
+    if (btcCorrelationInput.value !== sanitized) btcCorrelationInput.value = sanitized;
+    current.btcCorrelation = sanitized;
     schedulePersist();
   });
 }
@@ -992,6 +1122,7 @@ createForm.addEventListener('submit', (e) => {
   coinEditInput.value = current.coin;
   createdAt.textContent = `Создан: ${formatDate(current.createdAt)}`;
   if (coinNotes) coinNotes.value = current.notes || '';
+  if (btcCorrelationInput) btcCorrelationInput.value = '';
   renderBlocks(current);
   dirty = false;
   if (saveTimer) clearTimeout(saveTimer);
@@ -1065,6 +1196,7 @@ if (deleteAllChecklistsBtn) {
     if (setupVerdictEl) setupVerdictEl.hidden = true;
     if (coinNotes) coinNotes.value = '';
     if (coinEditInput) coinEditInput.value = '';
+    if (btcCorrelationInput) btcCorrelationInput.value = '';
 
     dirty = false;
     if (saveTimer) clearTimeout(saveTimer);

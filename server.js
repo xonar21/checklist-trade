@@ -20,7 +20,7 @@ function buildBlocksFromTemplate() {
     order: b.order,
     title: b.title,
     goal: b.goal,
-    ...(b.blockHint ? { blockHint: b.blockHint } : {}),
+    ...(b.blockHintHtml ? { blockHintHtml: b.blockHintHtml } : {}),
     groups: b.groups.map((g) => ({
       id: g.id,
       label: g.label,
@@ -43,6 +43,7 @@ function buildChecklist(coin) {
     coin,
     createdAt: now.toISOString(),
     notes: '',
+    btcCorrelation: '',
     blocks: buildBlocksFromTemplate(),
   };
 }
@@ -184,6 +185,15 @@ app.patch('/api/checklists/:id', (req, res) => {
 
   if (typeof req.body?.notes === 'string') {
     checklist.notes = req.body.notes;
+  }
+
+  if (typeof req.body?.btcCorrelation === 'string') {
+    const d = req.body.btcCorrelation.replace(/\D/g, '');
+    if (d === '') checklist.btcCorrelation = '';
+    else {
+      const n = parseInt(d, 10);
+      checklist.btcCorrelation = Number.isNaN(n) ? '' : String(Math.min(100, n));
+    }
   }
 
   if (Array.isArray(req.body?.blocks)) {
